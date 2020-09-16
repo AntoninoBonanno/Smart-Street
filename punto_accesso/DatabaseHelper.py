@@ -6,11 +6,14 @@ class Street:
     def __init__(self, db_data):
         self.id = db_data[0]
         self.name = db_data[1]
-        self.ip_address = db_data[2]
+        self.__ipAddress = db_data[2]
         self.length = db_data[3]
 
     def to_dict(self):
-        return self.__dict__
+        return {key: value for key, value in self.__dict__.items() if not key.startswith('_') and not callable(key)}
+
+    def getIpAddress(self):
+        return self.__ipAddress
 
 
 class Database:
