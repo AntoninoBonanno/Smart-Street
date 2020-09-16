@@ -1,27 +1,19 @@
+import json
 from flask import Flask
-import mysql.connector as mysql
+from DatabaseHelper import Database
 
 app = Flask(__name__)
-db = mysql.connect(
-    host="localhost",
-    user="root",
-    password="",
-    database="street_smart"
-)
+db = Database()
 
 
 @app.route('/', methods=['GET'])
 def street_list():
-    return '{"name":"Bob"}'
+    streets = db.getStreets()
+    streets = [street.to_dict() for street in streets]
+    streets.sort(key=lambda obj: obj["id"])
+
+    return json.dumps({"streets": streets})
 
 
 if __name__ == '__main__':
-
-    cursor = db.cursor()
-    query = "SELECT * FROM streets"
-    cursor.execute(query)
-    streets = cursor.fetchall()
-
-    print(streets)
-
     app.run()
