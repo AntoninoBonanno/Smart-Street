@@ -4,3 +4,6 @@
     ./bootstrap-vcpkg.sh
     ./vcpkg integrate install
     ./vcpkg install restclient-cpp
+    ./vcpkg install jsoncpp
+
+
