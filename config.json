@@ -4,5 +4,6 @@
         "user": "root",
         "password": "",
         "database": "street_smart"
-    }
+    },
+    "secret_key": "street_smart_key"
 }
