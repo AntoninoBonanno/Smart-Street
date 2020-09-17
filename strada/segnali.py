@@ -8,6 +8,7 @@ class Segnale:
     def __init__(self):
         self.id_signal= base64.b64encode(os.urandom(6)).decode('ascii')
         self.delta=2
+        self.name="Generic"
         self.action=["accelera","fermati","rallenta"]
 
     def getAction(self):
@@ -16,6 +17,8 @@ class Segnale:
         return self.delta
     def getId(self):
         return self.id_signal
+    def getName(self):
+        return self.name
 
 
 class Stop(Segnale):
@@ -23,25 +26,28 @@ class Stop(Segnale):
     def __init__(self):
         super().__init__()
         self.delta=10
+        self.name="Stop"
     def getAction(self):
         return self.action[1]
+    def getName(self):
+        return self.name
 
 class SpeedLimit(Segnale):
     
-    def __init__(self,client_speed,max_speed_road):
+    def __init__(self,max_speed_road):
         super().__init__()
      
         self.delta=10
-        
+        self.name="Speed Limit"
         self.max_speed_road=max_speed_road
         self.new_speed=randint(30,(self.max_speed_road))
-        self.client_speed=client_speed
     def getSpeed(self):
         return self.new_speed
-    def getAction(self):
-        if (self.client_speed<self.new_speed):
+    def getName(self):
+        return self.name
+    def getAction(self,client_speed):
+        if (client_speed<self.new_speed):
             return self.action[0]
-        
         return self.action[2]
         
 
@@ -53,6 +59,7 @@ class Semaforo(Segnale,Thread):
         self.delta=8
         self.status="red"
         self.durata=durata
+        self.name="semaphore"
         
     def getAction(self):
         if self.status=="green":
@@ -61,6 +68,8 @@ class Semaforo(Segnale,Thread):
             return self.action[1]
         if self.status=="yellow":
             return self.action[2]
+    def getName(self):
+        return self.name
 
     def run(self):
         while True:
