@@ -3,7 +3,7 @@ import json
 import datetime
 
 
-def create_token(route_id: int, street_id: str):
+def create_token(route_id: int, street_id: str) -> str:
     json_data_file = open("config.json")
     config = json.load(json_data_file)
 
@@ -19,7 +19,7 @@ def create_token(route_id: int, street_id: str):
     return auth_token
 
 
-def decode_token(auth_token: str):
+def decode_token(auth_token: str) -> dict:
     json_data_file = open("config.json")
     config = json.load(json_data_file)
     try:

@@ -22,18 +22,21 @@ class Route:
         self.id = db_data[0]
         self.car_id = db_data[1]
         self.car_ip = db_data[2]
-        self.current_street = db_data[3]
-        self.current_street_position = db_data[4]
-        self.route_list = json.loads(db_data[5])
+        self.route_list = json.loads(db_data[3])
+        self.current_index = db_data[4]
+        self.current_street_position = db_data[5]
 
 
 class Database:
     def __init__(self):
         json_data_file = open("config.json")
         config = json.load(json_data_file)
+
+        print("Effettuo la connessione con il DB")
         self.db = mysql.connect(**config["mysql"])
 
     def close(self):
+        print("Chiudo la connessione con il DB")
         self.db.close()
 
     def getStreets(self, id: int = None) -> [Street]:
@@ -63,7 +66,10 @@ class Database:
         cursor.execute(query, values)
         self.db.commit()
 
-        return self.getStreets(cursor.lastrowid)[0]
+        streets = self.getStreets(cursor.lastrowid)
+        if not streets:
+            return None
+        return streets[0]
 
     def getRoutes(self, id: int = None) -> [Route]:
         cursor = self.db.cursor()
@@ -80,19 +86,19 @@ class Database:
 
         return routes
 
-    def upsertRoute(self, car_id: str, car_ip: str, route_list: list = None, current_street: int = None, current_street_position: int = None, id: int = None) -> Route:
+    def upsertRoute(self, car_id: str, car_ip: str, route_list: list = None, current_index: int = None, current_street_position: int = None, id: int = None) -> Route:
 
         cursor = self.db.cursor()
         if id is not None:
-            if(current_street is None):
+            if(current_index is None):
                 raise Exception(
-                    "current_street non può essere None se stai aggiuornando una route")
+                    "current_index non può essere None se stai aggiuornando una route")
             if(current_street_position is None):
                 raise Exception(
-                    "current_street non può essere None se stai aggiuornando una route")
+                    "current_street_position non può essere None se stai aggiuornando una route")
 
-            query = "UPDATE `routes` SET `car_ip` = %s, `current_street` = %s, `current_street_position` = %s, `updated_at` = %s WHERE (`id` = %s AND `car_id` = %s);"
-            values = (car_ip, current_street, current_street_position,
+            query = "UPDATE `routes` SET `car_ip` = %s, `current_index` = %s, `current_street_position` = %s, `updated_at` = %s WHERE (`id` = %s AND `car_id` = %s);"
+            values = (car_ip, current_index, current_street_position,
                       datetime.now(), id, car_id)
         else:
             if(route_list is None):
@@ -105,4 +111,7 @@ class Database:
         cursor.execute(query, values)
         self.db.commit()
 
-        return self.getRoutes(cursor.lastrowid)[0]
+        streets = self.getStreets(cursor.lastrowid)
+        if not streets:
+            return None
+        return streets[0]

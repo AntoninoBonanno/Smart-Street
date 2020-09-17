@@ -3,9 +3,9 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__))) + "/utility")
 
+import atexit
 from random import randint
 from flask import Flask, jsonify, request, abort, make_response
-from flask_accept import accept
 
 import Auth
 from DatabaseHelper import Database
@@ -27,7 +27,7 @@ def street_list():
 
 @app.route('/', methods=['POST'])
 def create_route():
-    post_data = request.get_json()
+    post_data = request.get_json(force=True)
 
     car_id = post_data.get('targa', None)
     street_id = post_data.get('destinazione', None)
@@ -58,11 +58,19 @@ def create_route():
 
     route_list.append(street_id)  # aggiungo la strada da raggiungere alla fine
     route = db.upsertRoute(car_id, request.remote_addr, route_list)
+    if(route is None):
+        abort(make_response(jsonify(message="Errore creazione percorso"), 500))
 
     token = Auth.create_token(route.id, route_list[0])
 
     return jsonify(address=current_street.getIpAddress(), access_token=token.decode('UTF-8')), 200
 
+
+def onExit():
+    db.close()
+
+
+atexit.register(onExit)
 
 if __name__ == '__main__':
     app.run()

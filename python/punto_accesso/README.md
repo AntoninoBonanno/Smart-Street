@@ -4,7 +4,6 @@
      oppure
 
      conda install -c anaconda flask
-     pip install flask-accept
 
 2 - Install MYSQL 
 
