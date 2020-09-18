@@ -34,36 +34,47 @@ def create_route():
     if (car_id is None or street_id is None or isinstance(street_id, str) or street_id < 1):
         abort(make_response(jsonify(message="Formato dei parametri non corretti"), 400))
 
-    current_street = db.getStreets(street_id)
-    if (not current_street):
-        abort(make_response(jsonify(message="Destinazione non trovata"), 400))
-    current_street = current_street[0]
+    route = db.checkRoute(car_id)
 
-    streets = db.getStreets()
-    # recupero la lista di tutte le strade escludendo quella passata nella funzione, perchè è la strada da raggiungere
-    street_ids = [street.id for street in streets if street.id != street_id]
-    streets_len = len(street_ids) - 1
+    if route is None:
 
-    route_list = []
-    if streets_len > 0:
-        last_id = -1
-        # creo un percorso random con almeno 5 strade e un max di 15
-        for i in range(randint(5, 15)):
-            idx = randint(0, - 1)  # recupero un id
-            while idx == last_id:  # l'id non deve essere lo stesso del precedente, altrimenti resto nella stessa strada
-                idx = randint(0, len(street_ids) - 1)
+        current_street = db.getStreets(street_id)
+        if (not current_street):
+            abort(make_response(jsonify(message="Destinazione non trovata"), 400))
+        current_street = current_street[0]
 
-            last_id = idx
-            route_list.append(street_ids[idx])
+        streets = db.getStreets()
+        # recupero la lista di tutte le strade escludendo quella passata nella funzione, perchè è la strada da raggiungere
+        street_ids = [
+            street.id for street in streets if street.id != street_id]
+        streets_len = len(street_ids) - 1
 
-    route_list.append(street_id)  # aggiungo la strada da raggiungere alla fine
-    route = db.upsertRoute(car_id, request.remote_addr, route_list)
-    if(route is None):
-        abort(make_response(jsonify(message="Errore creazione percorso"), 500))
+        route_list = []
+        if streets_len > 0:
+            last_id = -1
+            # creo un percorso random con almeno 5 strade e un max di 15
+            for i in range(randint(5, 15)):
+                idx = randint(0, streets_len)  # recupero un id
+                while idx == last_id:  # l'id non deve essere lo stesso del precedente, altrimenti resto nella stessa strada
+                    idx = randint(0, streets_len)
 
-    token = Auth.create_token(route.id, route_list[0])
+                last_id = idx
+                route_list.append(street_ids[idx])
 
-    return jsonify(address=current_street.getIpAddress(), access_token=token.decode('UTF-8')), 200
+        # aggiungo la strada da raggiungere alla fine
+        route_list.append(street_id)
+        route = db.upsertRoute(car_id, request.remote_addr, route_list)
+        if(route is None):
+            abort(make_response(jsonify(message="Errore creazione percorso"), 500))
+
+        message = f"Procedi con l'indirizzo indicato per poter raggiungere {current_street.name}"
+    else:
+        current_street = db.getStreets(route.destination)[0]
+        message = f"Hai già richiesto l'accesso per la destinazione {current_street.name}. Raggiungi la destinazione prima di richiederne una nuova."
+
+    token = Auth.create_token(route.id, route.route_list[route.current_index])
+
+    return jsonify(address=current_street.getIpAddress(), access_token=token.decode('UTF-8'), message=message), 200
 
 
 def onExit():
