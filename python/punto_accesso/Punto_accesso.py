@@ -73,8 +73,8 @@ def create_route():
         message = f"Hai già richiesto l'accesso per la destinazione {current_street.name}. Raggiungi la destinazione prima di richiederne una nuova."
 
     token = Auth.create_token(route.id, route.route_list[route.current_index])
-
-    return jsonify(address=current_street.getIpAddress(), access_token=token.decode('UTF-8'), message=message), 200
+    firstStreet = db.getStreets(route.route_list[route.current_index])[0]
+    return jsonify(address=firstStreet.getIpAddress(), access_token=token.decode('UTF-8'), message=message), 200
 
 
 def onExit():

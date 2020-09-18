@@ -9,6 +9,7 @@ class Street:
         self.name = db_data[1]
         self.__ipAddress = db_data[2]
         self.length = db_data[3]
+        self.available = db_data[4]
 
     def to_dict(self):
         return {key: value for key, value in self.__dict__.items() if not key.startswith('_') and not callable(key)}
@@ -121,7 +122,7 @@ class Database:
 
     def checkRoute(self, car_id: str) -> Route:
         cursor = self.db.cursor()
-        query = "SELECT * FROM `routes` WHERE `car_id` = %s AND `finished_at` = null LIMIT 1"
+        query = "SELECT * FROM `routes` WHERE `car_id` = %s AND `finished_at` is null LIMIT 1"
         cursor.execute(query, (car_id,))
 
         db_data = cursor.fetchone()
