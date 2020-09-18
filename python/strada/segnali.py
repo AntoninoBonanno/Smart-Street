@@ -26,7 +26,7 @@ class Stop(Segnale):
     def __init__(self):
         super().__init__()
         self.delta=10
-        self.name="Stop"
+        self.name="stop"
     def getAction(self):
         return self.action[1]
     def getName(self):
@@ -38,7 +38,7 @@ class SpeedLimit(Segnale):
         super().__init__()
      
         self.delta=10
-        self.name="Speed Limit"
+        self.name="speed_limit"
         self.max_speed_road=max_speed_road
         self.new_speed=randint(30,(self.max_speed_road))
     def getSpeed(self):
@@ -51,7 +51,7 @@ class SpeedLimit(Segnale):
         return self.action[2]
         
 
-class Semaforo(Segnale,Thread):
+class Semaforo(Thread,Segnale):
     
     def __init__(self,durata):
         super().__init__()
