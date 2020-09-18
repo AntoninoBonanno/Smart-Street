@@ -17,17 +17,19 @@ class Strada:
         self.__init_point = 0  # per il sistema di riferimento
         self.__signal_type = signal_type  # tuple (segnale,posizione)
         self.__signal=self.create_signal(5,5,10)
-        db=Database()
-        db_result=db.upsertStreet(name=self.__name,ip_address= self.__ip_address,length=self.__lenght_street)
+        self.__db=Database()
+        db_result=self.__db.upsertStreet(name=self.__name,ip_address= self.__ip_address,length=self.__lenght_street)
 
         if db_result is not None:
-            self.__id=db_result.id #strada istanziata nel database
-            self.__available=True
+            self.__id=db_result.id #strada istanziata nel database e restituzione del database
+            self.__available=db_result.available
             for i in self.__signal:
                 if i[0].getName() == "semaphore":
                     i[0].run()
         else:
-            self.__available=False #mi dice se la strada è disponibile o no 
+            self.__id=None #se l'id è none vuol dire che non è stato scritto sul db 
+            self.__available=False
+
     
         
     def get_lenght(self):
@@ -36,6 +38,7 @@ class Strada:
         return self.__available
 
     def get_id(self):
+
         return self.__id
 
     def get_name(self):
@@ -81,18 +84,29 @@ class Strada:
 
         street_signal.append((segnali.Stop(),self.__lenght_street)) #stop fine strada
         return street_signal
+
+    
+    #supponiamo che qui arriva il token del client decodificato a questo punto lo dobbiamo controllare per vedere se è valido 
+
+    def validate_token(self,token_client:dict(),car_id:str): #da testare 
+        #il token decodificato è un dizionario, la decodifica la facciamo nel server
+        street_id_token=token_client['street_id']
+        route_id_token=token_client['route_id']
+        #controlliamo se l'id della strada è valido 
+        if street_id_token!=self.__id:
+            return False
+        db_route_result=self.__db.getRoutes(route_id_token)
+
+        if (not db_route_result) or (db_route_result[0].car_id!=car_id):
+            return False 
+
+        
+        return True
+
+
         
             
-                
-
-
-
-
-    '''
-    funzione che riceve il token dal client, riceve il token e l'id del client. Dentro la funzione mi devo fare il decode del token,se non restituisce false
-    posso andare a recuperare la street id e devo verificare che è la stessa mia. Con la route id mi faccio la get della route id e mi controllo car_id e car_ip
-
-    '''
+    
 if __name__ == '__main__':
     #signal_list=[('semaphore',1),('speed_limit',3)]
     #strada1=Strada(100,"10.11.13.41:400",signal_list,"Bronte",100)
