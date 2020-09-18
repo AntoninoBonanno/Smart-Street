@@ -62,7 +62,7 @@ class Strada:
                     return i[0].getAction(client_speed), i[0].getName(), i[0].getSpeed()
                 return i[0].getAction(client_speed), i[0].getName()
     
-    def create_signal(self,step,stop_dist,time_semaphore):
+    def create_signal(self,step:int,stop_dist:int,time_semaphore:int):
         street_signal=list()
 
         for i in self.__signal_type:
@@ -94,10 +94,12 @@ class Strada:
 
     '''
 if __name__ == '__main__':
-    signal_list=[('semaphore',1),('speed_limit',3)]
-    strada1=Strada(100,"10.11.13.41:400",signal_list,"Bronte",100)
-    print(strada1.get_signal())
+    #signal_list=[('semaphore',1),('speed_limit',3)]
+    #strada1=Strada(100,"10.11.13.41:400",signal_list,"Bronte",100)
+    #print(strada1.get_signal())
     signal_list_2=[('stop',1),('speed_limit',3)]
-    strada2=Strada(150,"10.10.13.41:400",signal_list,"Adrano",80)
-    print(strada2.get_signal())
+    strada2=Strada(150,"10.10.13.41:400",signal_list_2,"Adrano",80)
+    if(strada2.get_status()):
+        print(strada2.get_signal())
+        print(strada2.find_signal(20,80))
 
