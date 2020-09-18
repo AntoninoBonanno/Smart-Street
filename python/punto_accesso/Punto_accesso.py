@@ -36,7 +36,7 @@ def create_route():
 
     route = db.checkRoute(car_id)
 
-    if not route:
+    if route is None:
 
         current_street = db.getStreets(street_id)
         if (not current_street):

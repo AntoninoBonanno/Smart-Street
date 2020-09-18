@@ -55,14 +55,14 @@ class Database:
 
         return streets
 
-    def upsertStreet(self, name: str, ip_address: str, length: int, id: int = None) -> Street:
+    def upsertStreet(self, name: str, ip_address: str, length: int, available: bool = True, id: int = None) -> Street:
         cursor = self.db.cursor()
         if id is not None:
             query = "UPDATE `streets` SET `name` = %s, `ip_address` = %s, `length` = %s `updated_at` = %s WHERE (`id` = %s);"
             values = (name, ip_address, length, datetime.now(), id)
         else:
-            query = "INSERT INTO `streets` (`name`, `ip_address`, `length`) VALUES (%s, %s, %s);"
-            values = (name, ip_address, length)
+            query = "INSERT INTO `streets` (`name`, `ip_address`, `length`, `available`) VALUES (%s, %s, %s, %s);"
+            values = (name, ip_address, length, available)
 
         cursor.execute(query, values)
         self.db.commit()
@@ -109,15 +109,15 @@ class Database:
 
             query = "INSERT INTO `routes` (`car_id`, `car_ip`, `route_list`, `destination`) VALUES (%s, %s, %s, %s);"
             values = (car_id, car_ip, json.dumps(
-                route_list), route_list.reverse()[0])
+                route_list), route_list[-1])
 
         cursor.execute(query, values)
         self.db.commit()
 
-        streets = self.getStreets(cursor.lastrowid)
-        if not streets:
+        routes = self.getRoutes(cursor.lastrowid)
+        if not routes:
             return None
-        return streets[0]
+        return routes[0]
 
     def checkRoute(self, car_id: str) -> Route:
         cursor = self.db.cursor()
