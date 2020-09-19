@@ -15,7 +15,7 @@ CREATE TABLE `street_smart`.`routes` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `car_id` VARCHAR(45) NOT NULL,
   `car_ip` VARCHAR(45) NOT NULL,
-  `route_list` JSON NOT NULL,  
+  `route_list` VARCHAR(255) NOT NULL,   /*JSON*/
   `current_index` INT UNSIGNED NOT NULL DEFAULT 0,
   `current_street_position` INT UNSIGNED NULL DEFAULT NULL,
   `destination` INT UNSIGNED, 

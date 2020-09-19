@@ -90,7 +90,7 @@ def create_route():
         message = f"Procedi con l'indirizzo indicato per poter raggiungere {destination_street.name}"
     else:
         destination_street = db.getStreets(route.destination)[0]
-        message = f"Hai già richiesto l'accesso per la destinazione {destination_street.name}. Raggiungi la destinazione prima di richiederne una nuova."
+        message = f"Hai gia' richiesto l'accesso per la destinazione {destination_street.name}. Raggiungi la destinazione prima di richiederne una nuova."
 
     token = Auth.create_token(
         route.id, route.route_list[route.current_index])  # creo il token
