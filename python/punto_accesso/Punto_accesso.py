@@ -4,6 +4,7 @@ sys.path.append(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__))) + "/utility")
 
 import atexit
+import argparse
 from random import randint
 from flask import Flask, jsonify, request, abort, make_response
 
@@ -108,4 +109,9 @@ def onExit():
 atexit.register(onExit)
 
 if __name__ == '__main__':
-    app.run()  # avvio il server
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--host', type=str, default=None)
+    parser.add_argument('--port', type=int, default=None)
+    args = parser.parse_args()
+
+    app.run(host=args.host, port=args.port)  # avvio il server
