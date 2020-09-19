@@ -16,7 +16,7 @@ CREATE TABLE `street_smart`.`routes` (
   `car_id` VARCHAR(45) NOT NULL,
   `car_ip` VARCHAR(45) NOT NULL,
   `route_list` VARCHAR(255) NOT NULL,   /*JSON*/
-  `current_index` INT UNSIGNED NOT NULL DEFAULT 0,
+  `current_index` INT NOT NULL DEFAULT -1,
   `current_street_position` INT UNSIGNED NULL DEFAULT NULL,
   `destination` INT UNSIGNED, 
   `finished_at` DATETIME NULL DEFAULT NULL,

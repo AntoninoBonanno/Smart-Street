@@ -92,10 +92,11 @@ def create_route():
         destination_street = db.getStreets(route.destination)[0]
         message = f"Hai gia' richiesto l'accesso per la destinazione {destination_street.name}. Raggiungi la destinazione prima di richiederne una nuova."
 
+    current_index = route.current_index if route.current_index > -1 else 0
     token = Auth.create_token(
-        route.id, route.route_list[route.current_index])  # creo il token
+        route.id, route.route_list[current_index])  # creo il token
 
-    firstStreet = db.getStreets(route.route_list[route.current_index])[0]
+    firstStreet = db.getStreets(route.route_list[current_index])[0]
     return jsonify(address=firstStreet.getIpAddress(), access_token=token.decode('UTF-8'), message=message), 200
 
 
