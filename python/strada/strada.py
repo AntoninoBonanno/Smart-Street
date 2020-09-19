@@ -8,7 +8,7 @@ from random import randrange
 
 
 class Strada:
-    def __init__(self, street_lenght:float, ip_address: str, signal_type:list,name:str,max_speed_road:int):
+    def __init__(self, street_lenght:int, ip_address: str, signal_type:list,name:str,max_speed_road:int):
 
         self.__lenght_street = street_lenght
         self.__name=name
@@ -88,24 +88,36 @@ class Strada:
     
     #supponiamo che qui arriva il token del client decodificato a questo punto lo dobbiamo controllare per vedere se è valido 
 
-    def validate_token(self,token_client:dict(),car_id:str): #da testare 
+    def validate_token(self,token_client:dict(),car_id:str,car_ip:str): #da testare 
         #il token decodificato è un dizionario, la decodifica la facciamo nel server
         street_id_token=token_client['street_id']
         route_id_token=token_client['route_id']
         #controlliamo se l'id della strada è valido 
         if street_id_token!=self.__id:
             return False
+        
         db_route_result=self.__db.getRoutes(route_id_token)
+        current_index=db_route_result[0].current_index
 
         if (not db_route_result) or (db_route_result[0].car_id!=car_id):
             return False 
 
+        if(db_route_result[0].route_list[current_index+=1]!=self.__id):
+            return false 
+        self.__db.upsertRoute(car_id,car_ip,None,current_index+1,0,route_id_token)
         
         return True
 
+    def check_auth(self,car_id:str):
+        db_result_route=self.__db.checkRoute(car_id)
+        #restituisce una route
+        if(db_result_route.route_list[db_result_route.current_index]==self.__id)
+            return True #autenticated in this road
+        return False
 
-        
-            
+
+
+
     
 if __name__ == '__main__':
     #signal_list=[('semaphore',1),('speed_limit',3)]
