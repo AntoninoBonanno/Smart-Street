@@ -96,15 +96,18 @@ class Strada:
         route_id_token=token_client['route_id']
         #controlliamo se l'id della strada è valido 
         if street_id_token!=self.__id:
+            print("soliti problemi con il token")
             return False
         
         db_route_result=self.__db.getRoutes(route_id_token)
         current_index=db_route_result[0].current_index
 
         if (not db_route_result) or (db_route_result[0].car_id!=car_id):
+            print("sto uscendo qui ")
             return False 
 
         if(db_route_result[0].route_list[current_index+1] != self.__id):
+            print("non funziona ")
             return False 
         self.__db.upsertRoute(car_id,car_ip,None,current_index+1,0,route_id_token)
         
