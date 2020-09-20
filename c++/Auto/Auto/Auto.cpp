@@ -9,17 +9,14 @@ int main(int argc, char* argv[])
 {
     Car macchina(2,"EZ769FY");
     int x = 0;
+    //cout << "ciao";
     Json::Value streets;
     streets=macchina.getDestinations("127.0.0.1:5000");
     do {
         cout << "Scegli la tua destinazione[id]" << endl;
         cin >> x;
     } while (x == 0);
-    x = --x;
-    macchina.goToDestination(streets,x);
-   
-    
-
+    macchina.goToDestination(to_string(x));
 }
 
 
