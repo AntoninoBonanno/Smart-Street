@@ -9,7 +9,7 @@ class Car
 {  
     private:
         RestClient::Connection* conn;
-        void runStreet(const char* host, const char* port, string accessToken); //connessione con la strada
+        void runStreet(string host, string port, string accessToken); //connessione con la strada
         tuple<string,string,string> richiestaAccess(string destinazione);
         void sendInfo(); //comunico la mia posizone e current_speed e la targa alla strada
         void changeSpeed(string action);

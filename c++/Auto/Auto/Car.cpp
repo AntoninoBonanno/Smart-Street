@@ -45,7 +45,7 @@ void Car::goToDestination(string destination) {
 }
 
 //private
-void Car::runStreet(const char* host, const char* port, string accessToken) {
+void Car::runStreet(string host, string port, string accessToken) {
     cout << "host:" << host <<" port:" << port <<endl;
     cout << "accessToken:" << accessToken << endl;
     //prova socket
@@ -66,8 +66,8 @@ void Car::runStreet(const char* host, const char* port, string accessToken) {
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_protocol = IPPROTO_TCP;
     // Resolve the server address and port
-    //int iResult = getaddrinfo(host, port, &hints, &result);
-    iResult = getaddrinfo("192.168.217.1", "50178", &hints, &result);
+    iResult = getaddrinfo(host.c_str(), port.c_str(), &hints, &result);
+    //iResult = getaddrinfo("192.168.217.1", "8080", &hints, &result);
     if (iResult != 0) {
         printf("getaddrinfo failed: %d\n", iResult);
         WSACleanup();
@@ -96,9 +96,11 @@ void Car::runStreet(const char* host, const char* port, string accessToken) {
     
     
     // Send an initial buffer
-    const char* sendbuf = ("{\"accessToken\":\"" + accessToken + "\",\"targa\":\"" + code + "\"}").c_str();
+    string sendbuf = "{\"access_token\":\"" + accessToken + "\",\"targa\":\"" + code + "\"}";
+    cout << sendbuf;
+    
 
-    iResult = send(ConnectSocket, sendbuf, (int)strlen(sendbuf), 0);
+    iResult = send(ConnectSocket, sendbuf.c_str(), sendbuf.size(), 0);
     if (iResult == SOCKET_ERROR) {
         printf("send failed: %d\n", WSAGetLastError());
         closesocket(ConnectSocket);
