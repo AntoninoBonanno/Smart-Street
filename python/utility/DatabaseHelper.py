@@ -21,7 +21,11 @@ class DB_Street:
         return {key: value for key, value in self.__dict__.items() if not key.startswith('_') and not callable(key)}
 
     def getIpAddress(self):
-        return self.__ipAddress
+        if ":" not in self.__ipAddress:
+            return None, None
+
+        host = self.__ipAddress.split(":")
+        return host[0], host[1]  # host, port
 
 
 class DB_Route:
@@ -54,13 +58,13 @@ class Database:
         print("Chiudo la connessione con il DB")
         self.db.close()
 
-    def getStreets(self, id: int = None) -> [DB_Street]:
+    def getStreets(self, id: int = None, ipAddress: str = None) -> [DB_Street]:
         """
         Funzione che restituisce le strade dal DB
 
         Args:
             id (int, optional): Se viene passato un id, effettua la ricerca sull'id specificato. Defaults to None.
-
+            ipAddress (str, optional): Se viene passato ipAddress, effettua la ricerca sull'ipAddress specificato. Defaults to None.
         Returns:
             [DB_Street]: lista delle strade recuperate
         """
@@ -71,6 +75,14 @@ class Database:
         if(id is not None):
             query += " WHERE `id` = %s"
             values = (id,)
+
+        if(ipAddress is not None):
+            if (id is not None):
+                query += " AND `ipAddress` = %s"
+                values = (id, ipAddress)
+            else:
+                query += " WHERE `ipAddress` = %s"
+                values = (ipAddress,)
         cursor.execute(query, values)
 
         streets = []
@@ -93,6 +105,11 @@ class Database:
         Returns:
             DB_Street: La strada appena creata
         """
+
+        if id is None:
+            streets = self.getStreets(ipAddress=ip_address)
+            if streets:
+                id = streets[0].id
 
         cursor = self.db.cursor()
         if id is not None:
