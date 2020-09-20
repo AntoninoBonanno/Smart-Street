@@ -1,5 +1,10 @@
 #include "Car.h"
-# include <winsock2.h>
+#include <windows.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <stdlib.h>
+#include <stdio.h>
+
 
 
 
@@ -30,31 +35,39 @@ Json::Value Car::getDestinations(string address) {
     return streets;
 }
 
-void Car::goToDestination(const Json::Value streetList, int destination) {
+void Car::goToDestination(string destination) {
     if (conn == NULL) throw new exception("Recupera la destinazione");
     //cout << "Hai scelto la strada: " << StreetList[x] << endl;
     //post con targa e destinazione(id della street)    
-    string destinazione = streetList[destination]["id"].asString();
-    string address, access_token;
-    tie(address, access_token) = richiestaAccess(destinazione);
-    runStreet(address, access_token);
+    string host,port, access_token;
+    tie(host,port, access_token) = richiestaAccess(destination);
+    runStreet(host.c_str(), port.c_str(), access_token);
 }
 
 //private
-void Car::runStreet(string address, string accessToken) {
-    /*
+void Car::runStreet(const char* host, const char* port, string accessToken) {
+    cout << "host:" << host <<" port:" << port <<endl;
+    cout << "accessToken:" << accessToken << endl;
     //prova socket
     struct addrinfo* result = NULL,
         * ptr = NULL,
         hints;
 
+    WSADATA wsaData;
+    // Initialize Winsock
+    int iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
+    if (iResult != 0) {
+        printf("WSAStartup failed with error: %d\n", iResult);
+        exit(0);
+    }
+
     ZeroMemory(&hints, sizeof(hints));
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_protocol = IPPROTO_TCP;
-
     // Resolve the server address and port
-    int iResult = getaddrinfo("server address", "server port", &hints, &result);
+    //int iResult = getaddrinfo(host, port, &hints, &result);
+    iResult = getaddrinfo("192.168.217.1", "50178", &hints, &result);
     if (iResult != 0) {
         printf("getaddrinfo failed: %d\n", iResult);
         WSACleanup();
@@ -83,7 +96,8 @@ void Car::runStreet(string address, string accessToken) {
     
     
     // Send an initial buffer
-    char* sendbuf;
+    const char* sendbuf = ("{\"accessToken\":\"" + accessToken + "\",\"targa\":\"" + code + "\"}").c_str();
+
     iResult = send(ConnectSocket, sendbuf, (int)strlen(sendbuf), 0);
     if (iResult == SOCKET_ERROR) {
         printf("send failed: %d\n", WSAGetLastError());
@@ -95,11 +109,12 @@ void Car::runStreet(string address, string accessToken) {
     printf("Bytes Sent: %ld\n", iResult);
 
     // Receive data until the server closes the connection
-    char* recvbuf;
+    char recvbuf[512];
     do {
         iResult = recv(ConnectSocket, recvbuf, (int)strlen(recvbuf), 0);
         if (iResult > 0)
             printf("Bytes received: %d\n", iResult);
+            //changeSpeed(action);
         else if (iResult == 0)
             printf("Connection closed\n");
         else
@@ -119,7 +134,7 @@ void Car::runStreet(string address, string accessToken) {
     WSACleanup();
 
 
-    */
+    
 
     /*RestClient::Response post = conn->post("/", "{\"accessToken\":\"" + accessToken + "\",\"targa\":\"" + code + "\"}");
     if (post.code != 200) {
@@ -133,7 +148,7 @@ void Car::runStreet(string address, string accessToken) {
     sendInfo();*/
 }
 
-tuple<string, string> Car::richiestaAccess(string destinazione) {
+tuple<string, string,string> Car::richiestaAccess(string destinazione) {
     RestClient::Response post = conn->post("/", "{\"destinazione\":" + destinazione + ",\"targa\":\"" + code + "\"}");
     if (post.code != 200) {
         cout << "Errore nella richiesta di post" << endl;
@@ -147,9 +162,10 @@ tuple<string, string> Car::richiestaAccess(string destinazione) {
     RestClient::disable();
     Json::Value response = json_parse(post); //faccio il parse
     cout << response["message"] << endl;
-    string address = response["address"].asString();  //mi restituisce l'address (indirizzo ip della strada destinazione) e l'access token
+    string host = response["host"].asString();    //mi restituisce l'address (indirizzo ip della strada destinazione) e l'access token
+    string port = response["port"].asString();
     string access_token = response["access_token"].asString();
-    return tie(address, access_token);
+    return tie(host, port, access_token);
 }
 
 void Car::sendInfo() {
