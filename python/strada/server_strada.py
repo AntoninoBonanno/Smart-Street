@@ -33,12 +33,13 @@ def threaded(c,street):
         #data è json
         
         try:
-            if(data is None ):
+            if(not data or data is None ):
                 raise Exception("Error connection not valid")
+
             data_decoded = json.loads(data)
+
             access_token=data_decoded['access_token']
             car_id=data_decoded['targa']
-            
             if(access_token is not None):
                 car_ip,port = c.getpeername()
                 if(street.validate_token(access_token,car_id,car_ip)):

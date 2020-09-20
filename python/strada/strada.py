@@ -5,6 +5,7 @@ sys.path.append(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__))) + "/utility")
 from DatabaseHelper import Database
 from random import randrange
+import Auth as auth
 
 
 class Strada:
@@ -88,8 +89,9 @@ class Strada:
     
     #supponiamo che qui arriva il token del client decodificato a questo punto lo dobbiamo controllare per vedere se è valido 
 
-    def validate_token(self,token_client:dict(),car_id:str,car_ip:str): #da testare 
+    def validate_token(self,token_client:str,car_id:str,car_ip:str): #da testare 
         #il token decodificato è un dizionario, la decodifica la facciamo nel server
+        token_client=auth.decode_token(token_client)
         street_id_token=token_client['street_id']
         route_id_token=token_client['route_id']
         #controlliamo se l'id della strada è valido 
