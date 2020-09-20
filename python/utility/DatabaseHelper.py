@@ -78,10 +78,10 @@ class Database:
 
         if(ipAddress is not None):
             if (id is not None):
-                query += " AND `ipAddress` = %s"
+                query += " AND `ip_address` = %s"
                 values = (id, ipAddress)
             else:
-                query += " WHERE `ipAddress` = %s"
+                query += " WHERE `ip_address` = %s"
                 values = (ipAddress,)
         cursor.execute(query, values)
 
