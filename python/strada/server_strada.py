@@ -80,7 +80,7 @@ def ServerStreet(ip_address,port,st_lenght,speed,name,sig_type):
     sig_type=[('stop',1),('speed_limit',2)]
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
-    
+
     if(ip_address is None):
         hostname = socket.gethostname()
         ip_address=socket.gethostbyname(hostname)
@@ -90,7 +90,9 @@ def ServerStreet(ip_address,port,st_lenght,speed,name,sig_type):
     host_strada=ip_address+':'+str(port)
     street=st(street_lenght=st_lenght,ip_address=host_strada,signal_type=sig_type,name=name,max_speed_road=speed)
     print("socket binded to port", port) 
-    # put the socket into listening mode 
+    '''
+    listening mode
+    '''
     s.listen(5) 
     print("socket is listening") 
     # a forever loop until client wants to exit 
@@ -101,7 +103,8 @@ def ServerStreet(ip_address,port,st_lenght,speed,name,sig_type):
         print_lock.acquire() 
         print('Connected to :', addr[0], ':', addr[1]) 
         # Start a new thread and return its identifier 
-        start_new_thread(threaded, (c,),street) 
+        start_new_thread(threaded, (c,street)) 
+  
     s.close() 
 
   
