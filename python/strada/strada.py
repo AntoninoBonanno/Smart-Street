@@ -105,7 +105,7 @@ class Strada:
             return False 
 
         if(db_route_result[0].route_list[current_index+1] != self.__id):
-            return false 
+            return False 
         self.__db.upsertRoute(car_id,car_ip,None,current_index+1,0,route_id_token)
         
         return True
