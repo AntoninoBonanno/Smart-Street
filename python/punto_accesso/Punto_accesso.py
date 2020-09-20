@@ -88,7 +88,7 @@ def create_route():
         if(route is None):
             abort(make_response(jsonify(message="Errore creazione percorso"), 500))
 
-        message = f"Procedi con l'indirizzo indicato per poter raggiungere {destination_street.name}"
+        message = f"Procedi con l'host e port indicato per poter raggiungere {destination_street.name}"
     else:
         destination_street = db.getStreets(route.destination)[0]
         message = f"Hai gia' richiesto l'accesso per la destinazione {destination_street.name}. Raggiungi la destinazione prima di richiederne una nuova."
@@ -98,7 +98,12 @@ def create_route():
         route.id, route.route_list[current_index])  # creo il token
 
     firstStreet = db.getStreets(route.route_list[current_index])[0]
-    return jsonify(address=firstStreet.getIpAddress(), access_token=token.decode('UTF-8'), message=message), 200
+
+    host, port = firstStreet.getIpAddress()
+    if not host:
+        abort(make_response(jsonify(message="Errore indirizzo strada"), 500))
+
+    return jsonify(host=host, port=port, access_token=token.decode('UTF-8'), message=message), 200
 
 
 def onExit():
