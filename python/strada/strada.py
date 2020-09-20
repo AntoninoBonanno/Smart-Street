@@ -63,7 +63,7 @@ class Strada:
             if ((i[1] - client_position < i[0].delta) and (i[1] - client_position > 0)):
                 if(i[0].getName() == "speed_limit"):
                     return i[0].getAction(client_speed), i[0].getName(), i[0].getSpeed()
-                return i[0].getAction(client_speed), i[0].getName()
+                return i[0].getAction(client_speed), i[0].getName(),None
     
     def create_signal(self,step:int,stop_dist:int,time_semaphore:int):
         street_signal=list()
@@ -102,7 +102,7 @@ class Strada:
         if (not db_route_result) or (db_route_result[0].car_id!=car_id):
             return False 
 
-        if(db_route_result[0].route_list[current_index+=1]!=self.__id):
+        if(db_route_result[0].route_list[current_index+1] != self.__id):
             return false 
         self.__db.upsertRoute(car_id,car_ip,None,current_index+1,0,route_id_token)
         
@@ -111,10 +111,9 @@ class Strada:
     def check_auth(self,car_id:str):
         db_result_route=self.__db.checkRoute(car_id)
         #restituisce una route
-        if(db_result_route.route_list[db_result_route.current_index]==self.__id)
+        if(db_result_route.route_list[db_result_route.current_index]==self.__id):
             return True #autenticated in this road
         return False
-
 
 
 
