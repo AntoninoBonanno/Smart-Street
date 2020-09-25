@@ -122,7 +122,7 @@ class Database:
         cursor.execute(query, values)
         self.db.commit()
 
-        streets = self.getStreets(cursor.lastrowid)
+        streets = self.getStreets(id or cursor.lastrowid)
         if not streets:
             return None
         return streets[0]
