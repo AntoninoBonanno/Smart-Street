@@ -90,7 +90,6 @@ class Strada:
         street_signal.append((segnali.Stop(), self.__lenght_street))
         return street_signal
 
-<<<<<<< Updated upstream
     # supponiamo che qui arriva il token del client decodificato a questo punto lo dobbiamo controllare per vedere se è valido
     # MODIFICHE NINO
 
@@ -123,21 +122,6 @@ class Strada:
 
         db_result_route = self.__db.checkRoute(car_id)
         if db_result_route is None:
-=======
-    
-    #supponiamo che qui arriva il token del client decodificato a questo punto lo dobbiamo controllare per vedere se è valido 
-
-    def validate_token(self,token_client:str,car_id:str,car_ip:str): #da testare 
-        #il token decodificato è un dizionario, la decodifica la facciamo nel server
-        if(self.__id is None):
-            return False 
-        token_client=auth.decode_token(token_client)
-        street_id_token=token_client['street_id']
-        route_id_token=token_client['route_id']
-        #controlliamo se l'id della strada è valido 
-        if street_id_token!=self.__id:
-            print("soliti problemi con il token")
->>>>>>> Stashed changes
             return False
 
         # non mi convince, forse bisogna inserire un'altro parametro nel db per capire se questa strada è l'indice giusto.... discuterne
