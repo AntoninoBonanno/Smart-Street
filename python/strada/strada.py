@@ -93,19 +93,26 @@ class Strada:
     #accetto in input una velocità e un tempo, calcola il tempo passato tra quello originale e il corrente. Mi devo recuperare
     #la vecchia posizione dal db e mi calcolo quella nuova. Nel momento in cui ho la posizone nuova devo andare a salvare sul db 
 
-    def come_back_action(self, speed_client: int, timestamp: str,car_id:str,car_ip:str):
+    def come_back_action(self, speed_client: int, timestamp: datetime,car_id:str,car_ip:str,db_route_result):
 
         #dobbiamo controllare se è autenticato
         #sto supponendo che la targa sia corretta 
 
-        dt_object = datetime.strptime(str(timestamp),'%Y-%m-%d %H:%M:%S.%f')
-        new_date_time=(datetime.now()-dt_object).seconds
-        result=self.__db.checkRoute(car_id)
+        new_date_time=(datetime.now()-timestamp).seconds
+        #result=self.__db.checkRoute(car_id)
         #stiamo considerando che la velocità ci viene passata in km/h mentre la posizione è in m e il tempo è in s
-       
-        new_position=((speed_client*3.6)*new_date_time)+result.current_street_position
-        self.__db.upsertRoute(car_id=car_id,car_ip=car_ip,route_list=result.route_list,current_index=result.current_index,current_street_position=new_position)
-        return self.__find_signal(new_position,speed_client),new_position
+        if(db_route_result is not None):
+            old_position=db_route_result.current_street_position
+            new_position=((speed_client/3.6)*new_date_time)+old_position
+            if(new_position!= old_position):
+        
+                self.__db.upsertRoute(car_id=car_id,car_ip=car_ip,route_list=db_route_result.route_list,current_index=db_route_result.current_index,current_street_position=new_position)
+        
+            return self.__find_signal(new_position,speed_client),new_position
+        
+        raise Exception("Errore, dati non corretti o vuoti")
+    
+
 
 
 
