@@ -195,8 +195,9 @@ class Street:
                     client.send(json.dumps({
                         "status": "success",
                         "message": "messaggio",
-                        "action": action,
-                        "position": newPos
+                        "action": action[0],
+                        "position": newPos,
+                        "limit_speed": action[2]
                     }).encode())
         except socket.error:
             print("Errore: Client disconnesso - forse è morto")
