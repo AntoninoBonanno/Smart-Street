@@ -194,7 +194,7 @@ class Street:
                         speed, car_id, car_ip, DB_Route)
                     client.send(json.dumps({
                         "status": "success",
-                        "message": "messaggio",
+                        "message": f"Hai incontrato il segnale {action[1]}" if action[2] is not None else "Niente in strada, vai come una scheggia!!",
                         "action": action[0],
                         "position": newPos,
                         "limit_speed": action[2]
