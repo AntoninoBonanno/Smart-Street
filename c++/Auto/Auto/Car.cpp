@@ -66,8 +66,8 @@ void Car::runStreet(string host, string port, string accessToken) {
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_protocol = IPPROTO_TCP;
     // Resolve the server address and port
-    iResult = getaddrinfo(host.c_str(), port.c_str(), &hints, &result);
-    //iResult = getaddrinfo("192.168.217.1", "8080", &hints, &result);
+    //iResult = getaddrinfo(host.c_str(), port.c_str(), &hints, &result);
+    iResult = getaddrinfo("192.168.1.186", "8000", &hints, &result);
     if (iResult != 0) {
         printf("getaddrinfo failed: %d\n", iResult);
         WSACleanup();
