@@ -103,7 +103,7 @@ class Strada:
         result=self.__db.checkRoute(car_id)
         #stiamo considerando che la velocità ci viene passata in km/h mentre la posizione è in m e il tempo è in s
        
-        new_position=((speed_client/3.6)*new_date_time)+result.current_street_position
+        new_position=((speed_client*3.6)*new_date_time)+result.current_street_position
         self.__db.upsertRoute(car_id=car_id,car_ip=car_ip,route_list=result.route_list,current_index=result.current_index,current_street_position=new_position)
         return self.__find_signal(new_position,speed_client),new_position
 
