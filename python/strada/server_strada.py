@@ -8,11 +8,16 @@ from _thread import *
 from strada import Strada
 
 
+def sendData(c, json_data):
+    data = json.dumps(json_data)
+    c.sendall(bytes(data, encoding="utf-8"))
+
+
 def threaded(c, street):
-    c.send(json.dumps({
+    sendData(c, {
         "status": "success",
         "message": "Welcome to the Server"
-    }))
+    })
 
     while True:
         # data received from client
@@ -27,33 +32,39 @@ def threaded(c, street):
                 car_id = data_decoded['targa']
 
                 if not car_id:
-                    c.send(json.dumps(
-                        {"status": "error", "message": "Devi inviare la targa"}))
+                    sendData(c, {
+                        "status": "error",
+                        "message": "Devi inviare la targa"
+                    })
                     break  # chiudo il thread
 
                 if(street.checkAuth(car_id, car_ip, access_token) == False):
-                    c.send(json.dumps(
-                        {"status": "error", "message": "Autenticazione fallita"}))
+                    sendData(c, {
+                        "status": "error",
+                        "message": "Autenticazione fallita"
+                    })
                     break  # chiudo il thread
 
                 # qui siamo autenticati
-                if data_decoded['speed']:
+                if 'speed' in data_decoded:
                     pos = data_decoded['posizione']
                     speed = data_decoded['speed']
                     # eh qui è da vedere
-                    c.send(json.dumps({
+                    sendData(c, {
                         "status": "success",
                         "message": "messaggio",
                         "actions": [{
                             "speed": "azione dello speed",
                             "position": 0
                         }]
-                    }))
+                    })
             else:
                 timer = 1
         except Exception as e:
-            print("ERROR")
-            c.send(json.dumps({"status": "error", "message": str(e)}))
+            print(e)
+            sendData(c, {
+                "status": "error", "message": str(e)
+            })
             break
 
     # connection closed

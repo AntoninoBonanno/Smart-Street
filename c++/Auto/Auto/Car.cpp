@@ -66,8 +66,8 @@ void Car::runStreet(string host, string port, string accessToken) {
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_protocol = IPPROTO_TCP;
     // Resolve the server address and port
-    iResult = getaddrinfo(host.c_str(), port.c_str(), &hints, &result);
-    //iResult = getaddrinfo("192.168.217.1", "8080", &hints, &result);
+    //iResult = getaddrinfo(host.c_str(), port.c_str(), &hints, &result);
+    iResult = getaddrinfo("192.168.1.186", "8000", &hints, &result);
     if (iResult != 0) {
         printf("getaddrinfo failed: %d\n", iResult);
         WSACleanup();
@@ -114,9 +114,13 @@ void Car::runStreet(string host, string port, string accessToken) {
     char recvbuf[512];
     do {
         iResult = recv(ConnectSocket, recvbuf, (int)strlen(recvbuf), 0);
-        if (iResult > 0)
+        if (iResult > 0){
             printf("Bytes received: %d\n", iResult);
+            printf("Ho ricevuto: %d\n", recvbuf);
+            //status=error stampo message
+            //status=success stampo message, ricevo anche action
             //changeSpeed(action);
+        }
         else if (iResult == 0)
             printf("Connection closed\n");
         else

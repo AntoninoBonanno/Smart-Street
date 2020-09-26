@@ -7,3 +7,6 @@
     ./vcpkg install jsoncpp
 
 
+per avviare 
+    cd Progetto-APL\c++\Auto\Release
+    Auto.exe

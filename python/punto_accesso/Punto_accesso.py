@@ -50,9 +50,9 @@ def create_route():
         abort(make_response(jsonify(message="Formato dei parametri non corretti"), 400))
 
     # Verifico se esiste già un percorso per quella macchina
-    route = db.checkRoute(car_id)
+    route = db.getRoutes(car_id=car_id, finished=False)
 
-    if route is None:
+    if not route:
 
         destination_street = db.getStreets(street_id)
         if (not destination_street):  # verifico se esiste la destinazione selezionata
@@ -90,6 +90,7 @@ def create_route():
 
         message = f"Procedi con l'host e port indicato per poter raggiungere {destination_street.name}"
     else:
+        route = route[0]
         destination_street = db.getStreets(route.destination)[0]
         message = f"Hai gia' richiesto l'accesso per la destinazione {destination_street.name}. Raggiungi la destinazione prima di richiederne una nuova."
 
