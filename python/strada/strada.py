@@ -6,6 +6,7 @@ sys.path.append(os.path.dirname(os.path.dirname(
 from DatabaseHelper import Database
 from random import randrange
 import Auth as auth
+from datetime import datetime
 
 
 class Strada:
@@ -60,7 +61,7 @@ class Strada:
 
         return signal_street
 
-    def find_signal(self, client_position: float, client_speed: int):
+    def __find_signal(self, client_position: float, client_speed: int):
         for i in self.__signal:
             if ((i[1] - client_position < i[0].delta) and (i[1] - client_position > 0)):
                 if(i[0].getName() == "speed_limit"):
@@ -89,6 +90,28 @@ class Strada:
         # stop fine strada
         street_signal.append((segnali.Stop(), self.__lenght_street))
         return street_signal
+    #accetto in input una velocità e un tempo, calcola il tempo passato tra quello originale e il corrente. Mi devo recuperare
+    #la vecchia posizione dal db e mi calcolo quella nuova. Nel momento in cui ho la posizone nuova devo andare a salvare sul db 
+
+    def come_back_action(self, speed_client: float, timestamp: str,car_id:str,car_ip:str):
+
+        #dobbiamo controllare se è autenticato
+        #sto supponendo che la targa sia corretta 
+
+        dt_object = datetime.strptime(str(timestamp),'%Y-%m-%d %H:%M:%S.%f')
+        new_date_time=(datetime.now()-dt_object).seconds
+        result=self.__db.checkRoute(car_id)
+        #stiamo considerando che la velocità ci viene passata in km/h mentre la posizione è in m e il tempo è in s
+       
+        new_position=((speed_client/3.6)*new_date_time)+result.current_street_position
+        self.__db.upsertRoute(car_id=car_id,car_ip=car_ip,route_list=result.route_list,current_index=result.current_index,current_street_position=new_position)
+        return self.__find_signal(new_position,speed_client)
+
+
+
+
+        
+
 
     # supponiamo che qui arriva il token del client decodificato a questo punto lo dobbiamo controllare per vedere se è valido
     # MODIFICHE NINO
