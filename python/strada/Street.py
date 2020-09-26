@@ -5,6 +5,7 @@ import json
 import socket
 import argparse
 from threading import Thread
+from datetime import datetime
 from random import randrange
 
 sys.path.append(os.path.dirname(os.path.dirname(
@@ -77,6 +78,31 @@ class Street:
         street_signal.append((segnali.Stop(), self.__lenght))
         return street_signal
 
+    def __findSignal(self, client_position: float, client_speed: int):
+        for i in self.__signals:
+            if ((i[1] - client_position < i[0].delta) and (i[1] - client_position > 0)):
+                if(i[0].getName() == "speed_limit"):
+                    return i[0].getAction(client_speed), i[0].getName(), i[0].getSpeed()
+                return i[0].getAction(), i[0].getName(), None
+
+    def __comeBackAction(self, speed_client: int, car_id: str, car_ip: str, db_route_result):
+
+        new_date_time = (datetime.now() - db_route_result.updated_at).seconds
+
+        # stiamo considerando che la velocità ci viene passata in km/h mentre la posizione è in m e il tempo è in s
+        if(db_route_result is not None):
+            old_position = db_route_result.current_street_position
+            new_position = ((speed_client / 3.6) *
+                            new_date_time) + old_position
+
+            if(new_position != old_position):
+                self.__db.upsertRoute(car_id=car_id, car_ip=car_ip, route_list=db_route_result.route_list,
+                                      current_index=db_route_result.current_index, current_street_position=new_position)
+
+            return self.__findSignal(new_position, speed_client), new_position
+
+        raise Exception("Errore, dati non corretti o vuoti")
+
     def __checkAuth(self, car_ip: str, car_id: str = None, token_client: str = None):
         if car_id is None:
             raise Exception("Targa passata non valida.")
@@ -90,11 +116,11 @@ class Street:
 
             DB_Route = DB_Route[0]
             current_index = DB_Route.current_index
-            if current_index < 0 or len(current_index >= DB_Route.route_list) or DB_Route.route_list[current_index] != self.__id:
+            if current_index < 0 or current_index >= len(DB_Route.route_list) or DB_Route.route_list[current_index] != self.__id:
                 raise Exception(
                     "Non sei autorizzato ad accedere in questa strada.")
 
-            return DB_Route.current_street_position, DB_Route.updated_at
+            return DB_Route
 
         token_client = auth.decode_token(token_client)
         if token_client is None:
@@ -121,7 +147,7 @@ class Street:
             #  è già autenticato
             self.__db.upsertRoute(car_id, car_ip, DB_Route.route_list,
                                   current_index, DB_Route.current_street_position, DB_Route.id)
-            return DB_Route.current_street_position, DB_Route.updated_at
+            return DB_Route
 
         if current_index + 1 >= len_route_list or DB_Route.route_list[current_index + 1] != self.__id:
             raise Exception(
@@ -131,7 +157,7 @@ class Street:
         self.__db.upsertRoute(
             car_id, car_ip, DB_Route.route_list, current_index + 1, 0, DB_Route.id)
 
-        return DB_Route.current_street_position, DB_Route.updated_at
+        return DB_Route
 
     @threaded
     def __manageCar(self, client, client_address):
@@ -144,36 +170,38 @@ class Street:
         }).encode())
 
         try:
-
+            last_recv_datetime = datetime.now()
             while True:
                 data = client.recv(2048).decode()
                 if not data:
-                    # fare controlli
+                    if (last_recv_datetime - datetime.now()).seconds > 10:
+                        raise Exception("Macchina disconnessa")
                     continue
 
+                last_recv_datetime = datetime.now()
                 data_decoded = json.loads(data)  # data è json
                 car_id = data_decoded['targa'] if 'targa' in data_decoded else None
                 access_token = data_decoded['access_token'] if 'access_token' in data_decoded else None
 
-                old_position, old_timestamp = self.__checkAuth(
-                    car_ip, car_id, access_token)
+                DB_Route = self.__checkAuth(car_ip, car_id, access_token)
 
                 # qui siamo autenticati
                 if 'speed' in data_decoded:
                     pos = data_decoded['position']
                     speed = data_decoded['speed']
 
+                    action, newPos = self.__comeBackAction(
+                        speed, car_id, car_ip, DB_Route)
                     client.send(json.dumps({
                         "status": "success",
                         "message": "messaggio",
-                        "actions": [{
-                            "speed": "azione dello speed",
-                            "position": 0
-                        }]
+                        "action": action[0],
+                        "position": newPos,
+                        "limit_speed": action[2]
                     }).encode())
-
+        except socket.error:
+            print("Errore: Client disconnesso - forse è morto")
         except Exception as e:
-            print(e)
             client.send(json.dumps({
                 "status": "error", "message": str(e)
             }).encode())

@@ -14,7 +14,7 @@ class DB_Street:
         self.name = db_data[1]
         # attributo privato, non viene mostrato quando converto in dizionario l'oggetto
         self.__ipAddress = db_data[2]
-        self.length = db_data[3]
+        self.length = db_data[3]  # lunghezza in metri della strada
         self.available = db_data[4]
 
     def to_dict(self):
@@ -100,7 +100,7 @@ class Database:
         Args:
             name (str): nome della strada
             ip_address (str): indirizzo ip della strada
-            length (int): lunghezza in km della strada
+            length (int): lunghezza in m della strada
             available (bool, optional): se la strada è disponibile. Defaults to True.
             id (int, optional): Id della strada da aggiornare, se non viene passato viene creata una nuova strada. Defaults to None.
 
@@ -170,7 +170,7 @@ class Database:
 
         return routes
 
-    def upsertRoute(self, car_id: str, car_ip: str, route_list: list, current_index: int = -1, current_street_position: int = None, id: int = None) -> DB_Route:
+    def upsertRoute(self, car_id: str, car_ip: str, route_list: list, current_index: int = -1, current_street_position: float = None, id: int = None) -> DB_Route:
         """
         Funzione che esegue l'upsert del percorso (inserimento o aggornamento) sul DB
 
