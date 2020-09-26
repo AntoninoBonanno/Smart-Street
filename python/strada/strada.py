@@ -66,7 +66,7 @@ class Strada:
             if ((i[1] - client_position < i[0].delta) and (i[1] - client_position > 0)):
                 if(i[0].getName() == "speed_limit"):
                     return i[0].getAction(client_speed), i[0].getName(), i[0].getSpeed()
-                return i[0].getAction(client_speed), i[0].getName(), None
+                return i[0].getAction(), i[0].getName(), None
 
     def create_signal(self, step: int, stop_dist: int, time_semaphore: int):
         street_signal = list()
