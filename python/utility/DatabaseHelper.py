@@ -181,7 +181,7 @@ class Database:
                     "current_street_position non può essere None se stai aggiornando una route")
 
             query = "UPDATE `routes` SET `car_ip` = %s, `current_index` = %s, `current_street_position` = %s,  `finished_at` = %s, `updated_at` = %s WHERE (`id` = %s AND `car_id` = %s);"
-            finished_at = datetime.now() if current_index == len(route_list) - 1 else None
+            finished_at = None  # datetime.now() if current_index == len(route_list) - 1 else None
             values = (car_ip, current_index, current_street_position,
                       finished_at, datetime.now(), id, car_id)
         else:
@@ -196,7 +196,7 @@ class Database:
         cursor.execute(query, values)
         self.db.commit()
 
-        routes = self.getRoutes(cursor.lastrowid)
+        routes = self.getRoutes(id or cursor.lastrowid)
         if not routes:
             return None
         return routes[0]

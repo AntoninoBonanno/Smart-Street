@@ -107,11 +107,10 @@ class Strada:
                 return False  # throw exception?
 
             db_route_result = self.__db.getRoutes(route_id_token)
-            current_index = db_route_result[0].current_index
-
             if (not db_route_result) or (db_route_result[0].car_id != car_id):
                 return False  # throw exception?
 
+            current_index = db_route_result[0].current_index
             if(db_route_result[0].route_list[current_index + 1] != self.__id):
                 return False  # throw exception? se restituisce false qui significa che la macchina sta accedendo ad una strada che è diversa dalla sequenza
 
