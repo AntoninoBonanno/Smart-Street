@@ -41,6 +41,8 @@ class DB_Route:
         self.current_index = db_data[4]
         self.current_street_position = db_data[5]
         self.destination = db_data[6]
+        self.finished_at = db_data[7]
+        self.updated_at = db_data[8]
 
 
 class Database:
@@ -127,24 +129,40 @@ class Database:
             return None
         return streets[0]
 
-    def getRoutes(self, id: int = None) -> [DB_Route]:
+    def getRoutes(self, id: int = None, car_id: str = None, finished: bool = None) -> [DB_Route]:
         """
         Funzione che restituisce i percorsi dal DB
 
         Args:
-            id (int, optional): Se viene passato un id, effettua la ricerca sull'id specificato . Defaults to None.
+            id (int, optional): Se viene passato un id, effettua la ricerca sull'id specificato. Defaults to None.
+            car_id (str, optional): Se viene passato un car_id, effettua la ricerca sul car_id specificato. Defaults to None.
+            finished (str, optional): Se viene passato un car_id, effettua la ricerca sul car_id specificato. Defaults to None.
 
         Returns:
             [DB_Route]: lista dei percorsi recuperati
         """
 
         cursor = self.db.cursor()
-        query = "SELECT * FROM `routes`"
+        query = ""
         values = None
-        if(id is not None):
+        if id is not None:
             query += " WHERE `id` = %s"
             values = (id,)
-        cursor.execute(query, values)
+
+        if car_id is not None:
+            if query == "":
+                query += " WHERE `car_id` = %s"
+                values = (car_id,)
+            else:
+                query += " AND `car_id` = %s"
+                values = (id, car_id)
+
+        if finished is not None:
+            query += (" WHERE `finished_at` is " if query ==
+                      "" else " AND `finished_at` is ")
+            query += "not null" if finished == True else "null"
+
+        cursor.execute("SELECT * FROM `routes`" + query, values)
 
         routes = []
         for db_data in cursor.fetchall():
@@ -152,14 +170,14 @@ class Database:
 
         return routes
 
-    def upsertRoute(self, car_id: str, car_ip: str, route_list: list = None, current_index: int = -1, current_street_position: int = None, id: int = None) -> DB_Route:
+    def upsertRoute(self, car_id: str, car_ip: str, route_list: list, current_index: int = -1, current_street_position: int = None, id: int = None) -> DB_Route:
         """
         Funzione che esegue l'upsert del percorso (inserimento o aggornamento) sul DB
 
         Args:
             car_id (str): l'id della macchina (targa) da associare il percorso
             car_ip (str): l'ip attuale della macchina
-            route_list (list, optional): Lista di strade che formano il porcorso, obligatorio alla creazione, non è possibile aggiornarla. Defaults to None.
+            route_list (list): Lista di strade che formano il porcorso, non può essere aggiornata ma obligatoria per controlli
             current_index (int, optional): Indice della lista dove è attualmente la macchina, obligatoria quando si fa l'aggiornamento. Defaults to None.
             current_street_position (int, optional): Posizione attuale della macchina sulla strada dove è attualmente la macchina, obligatoria quando si fa l'aggiornamento. Defaults to None.
             id (int, optional): Id del percorso da aggiornare, se non viene passato viene creata un nuovo percorso. Defaults to None.
@@ -171,6 +189,9 @@ class Database:
             DB_Route: Il percorso appena creato
         """
 
+        if(route_list is None):
+            raise Exception("route_list non può essere None")
+
         cursor = self.db.cursor()
         if id is not None:
             if(current_index is None):
@@ -181,14 +202,10 @@ class Database:
                     "current_street_position non può essere None se stai aggiornando una route")
 
             query = "UPDATE `routes` SET `car_ip` = %s, `current_index` = %s, `current_street_position` = %s,  `finished_at` = %s, `updated_at` = %s WHERE (`id` = %s AND `car_id` = %s);"
-            finished_at = None  # datetime.now() if current_index == len(route_list) - 1 else None
+            finished_at = datetime.now() if current_index == len(route_list) - 1 else None
             values = (car_ip, current_index, current_street_position,
                       finished_at, datetime.now(), id, car_id)
         else:
-            if(route_list is None):
-                raise Exception(
-                    "route_list non può essere None se stai creando una nuova route")
-
             query = "INSERT INTO `routes` (`car_id`, `car_ip`, `route_list`, `destination`) VALUES (%s, %s, %s, %s);"
             values = (car_id, car_ip, json.dumps(
                 route_list), route_list[-1])
@@ -200,24 +217,3 @@ class Database:
         if not routes:
             return None
         return routes[0]
-
-    def checkRoute(self, car_id: str) -> DB_Route:
-        """
-        Verifica se esiste un percorso per la macchina indicata
-
-        Args:
-            car_id (str): id della macchina (targa) da controllare
-
-        Returns:
-            DB_Route: None se non esiste il percorso, altrimenti il percorso attuale della macchina
-        """
-
-        cursor = self.db.cursor()
-        query = "SELECT * FROM `routes` WHERE `car_id` = %s AND `finished_at` is null LIMIT 1"
-        cursor.execute(query, (car_id,))
-
-        db_data = cursor.fetchone()
-        if not db_data:
-            return None
-
-        return DB_Route(db_data)
