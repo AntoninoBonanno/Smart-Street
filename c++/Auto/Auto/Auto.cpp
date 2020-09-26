@@ -7,36 +7,21 @@ using namespace std;
 
 int main(int argc, char* argv[])
 {
-    Car macchina(2,"EZ769FY");
-    int x = 0;
-    //cout << "ciao";
+    /*cout << "Inserisci targa: ";
+    cin >> argv[0];
+    Car macchina(2, argv[0]);*/
+    Car macchina(100,"EZ769FY");
     Json::Value streets;
     streets=macchina.getDestinations("127.0.0.1:5000");
+    int x = 0;
     do {
         cout << "Scegli la tua destinazione[id]" << endl;
         cin >> x;
-    } while (x == 0);
+    } while (x == 0 || x>streets.size());
     macchina.goToDestination(to_string(x));
 }
 
 
-Json::Value json_parse(RestClient::Response r) {
-    //per fare il parse
-    string errors;
-    Json::Value root;
-    Json::CharReaderBuilder builder;
-    Json::CharReader* reader = builder.newCharReader();
 
-    bool parsingSuccessful = reader->parse(r.body.c_str(), r.body.c_str() + r.body.size(), &root, &errors);
-    delete reader;
-
-    if (!parsingSuccessful)
-    {
-        cout << r.body << endl;
-        cout << errors << endl;
-    }
-
-    return root;
-}
 
 

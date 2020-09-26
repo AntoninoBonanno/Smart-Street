@@ -4,22 +4,22 @@
 #include "restclient-cpp/connection.h"
 #include "json/json.h"
 using namespace std;
-Json::Value json_parse(RestClient::Response r);
 class Car
 {  
     private:
         RestClient::Connection* conn;
+        int current_speed;
+        double position;
         void runStreet(string host, string port, string accessToken); //connessione con la strada
         tuple<string,string,string> richiestaAccess(string destinazione);
         void sendInfo(); //comunico la mia posizone e current_speed e la targa alla strada
-        void changeSpeed(string action);
+        void doAction(string action, double position,double limit);
+        Json::Value jsonParse(string r);
     public:
-        double current_speed;
-        double speed_max;
-        double position;
+        int speed_max;       
         string code;
 
-        Car(double speed_max, string code) {  // Constructor
+        Car(int speed_max, string code) {  // Constructor
             this->current_speed = 0;
             this->speed_max = speed_max;
             this->position = 0;
