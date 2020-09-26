@@ -17,6 +17,7 @@ def threaded(c, street):
     while True:
         # data received from client
         data = c.recv(2048).decode()
+        print(data)
         car_ip, port = c.getpeername()
 
         try:
