@@ -161,11 +161,11 @@ void Car::runStreet(string host, string port, string accessToken) {
 
 
     while(true) {
-        
+        Sleep(1000);
         iResult = recv(ConnectSocket, &rcvbuffer[0], rcvbuffer.size(), 0);
         if (iResult > 0){
             //printf("Bytes received: %d\n", iResult);
-            Sleep(1000);
+           
             string rcv;
             rcv.clear();
             rcv.append(rcvbuffer.cbegin(), rcvbuffer.cend());            
