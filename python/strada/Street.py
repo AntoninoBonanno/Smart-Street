@@ -226,6 +226,15 @@ class Street:
 
         self.__s.close()
 
+def arg_tuple_parse(arg_list):
+    list_signal=[]
+    for i in arg_list:
+        field_args=i.split(',')
+        if(len(field_args)==2):
+            list_signal.append(tuple((field_args[0],int(field_args[1]))))
+        else:
+            raise Exception("Errore formattazione dati")
+    print(list_signal)
 
 if __name__ == '__main__':
 
@@ -235,11 +244,12 @@ if __name__ == '__main__':
     parser.add_argument('-l', '--st-lenght', type=int, default=50)
     parser.add_argument('-s', '--speed', type=int, default=50)
     parser.add_argument('-n', '--name', type=str, default="road1")
-    parser.add_argument('-st', '--sig-type', nargs='+', type=str)
+    parser.add_argument('-st', '--sig-type', nargs='+', type=str) #-st stop,2 speed_limit,2
     args = parser.parse_args()
 
-   # print("Your args are:  ", args)
-    sig_type = [('semaphore', 2), ('speed_limit', 3)]  # args.sig_type
+
+    #sig_type = [('semaphore', 2), ('speed_limit', 3)]  # args.sig_type
+
     street = Street(args.name, args.speed, args.st_lenght,
-                    sig_type, args.ip_address, args.port)
+                    arg_tuple_parse(args.sig_type), args.ip_address, args.port)
     street.run()
