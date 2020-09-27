@@ -61,7 +61,7 @@ class SpeedLimit(Segnale):
         return self.new_speed
 
     def getAction(self, client_speed):
-        if (client_speed < self.new_speed):
+        if (client_speed <= self.new_speed):
             return self.action[0]
         return self.action[2]
 

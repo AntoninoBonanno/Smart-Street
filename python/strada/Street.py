@@ -146,27 +146,22 @@ class Street:
             raise Exception("Errore, dati non corretti o vuoti")
 
         old_position = DB_Route.current_street_position
-        new_position = ((client_speed / 3.6) * new_date_time) + old_position
-        if client_position is not None and new_position != client_position:
-            # il client si trova in una posizione diversa, teoricamente il confronto delle posizioni deve sempre coincidere
-            new_position = client_position
-
-        if(new_position != old_position):
+        if(client_position != old_position):
             self.__db.upsertRoute(car_id=car_id, car_ip=car_ip, route_list=DB_Route.route_list,
-                                  current_index=DB_Route.current_index, current_street_position=new_position)
+                                  current_index=DB_Route.current_index, current_street_position=client_position)
 
-        signal, signal_position = self.__findSignal(new_position)
+        signal, signal_position = self.__findSignal(client_position)
         if signal is None:
-            return new_position, None, "Niente in strada, vai come una scheggia!!"
+            return client_position, None, "Niente in strada, vai come una scheggia!!"
 
         name_signal = signal.getName()
         action = {
             "signal": name_signal,
             "action": signal.getAction() if name_signal != "speed_limit" else signal.getAction(client_speed),
-            "distance": signal_position - new_position,
+            "distance": signal_position - client_position,
             "speed_limit": signal.getSpeed() if name_signal == "speed_limit" else None
         }
-        return new_position, action, f"Fra {action['distance']} m incontri il segnale {name_signal}, l'azione che devi eseguire è {action['action']}"
+        return action, f"Fra {action['distance']} m incontri il segnale {name_signal}, l'azione che devi eseguire è {action['action']}, limite {action['speed_limit']}"
 
     @threaded
     def __manageCar(self, client, client_address):
@@ -179,15 +174,10 @@ class Street:
         }).encode())
 
         try:
-            last_recv_datetime = datetime.now()
             while True:
+                client.settimeout(10.0)
                 data = client.recv(2048).decode()
-                if not data:
-                    if (last_recv_datetime - datetime.now()).seconds > 10:
-                        raise Exception("Macchina disconnessa")
-                    continue
 
-                last_recv_datetime = datetime.now()
                 data_decoded = json.loads(data)  # data è json
                 car_id = data_decoded['targa'] if 'targa' in data_decoded else None
                 access_token = data_decoded['access_token'] if 'access_token' in data_decoded else None
@@ -199,13 +189,12 @@ class Street:
                     pos = data_decoded['position'] if 'position' in data_decoded else None
                     speed = data_decoded['speed']
 
-                    newPos, action, message = self.__comeBackAction(
+                    action, message = self.__comeBackAction(
                         car_id, car_ip, speed, client_position=pos, DB_Route=DB_Route)
                     client.send(json.dumps({
                         "status": "success",
                         "message": message,
-                        "action": action,
-                        "position": newPos
+                        "action": action
                     }).encode())
         except socket.error:
             print("Errore: Client disconnesso - forse è morto")
@@ -226,16 +215,21 @@ class Street:
 
         self.__s.close()
 
+
 def arg_tuple_parse(arg_list):
-    list_signal=[]
+    if arg_list is None:
+        return [('semaphore', 2), ('speed_limit', 3)]
+
+    list_signal = []
     for i in arg_list:
-        field_args=i.split(',')
-        if(len(field_args)==2):
-            list_signal.append(tuple((field_args[0],int(field_args[1]))))
+        field_args = i.split(',')
+        if(len(field_args) == 2):
+            list_signal.append(tuple((field_args[0], int(field_args[1]))))
         else:
             raise Exception("Errore formattazione dati")
 
     return list_signal
+
 
 if __name__ == '__main__':
 
@@ -256,17 +250,14 @@ if __name__ == '__main__':
     parser.add_argument('-l', '--st-lenght', type=int, default=1000)
     parser.add_argument('-s', '--speed', type=int, default=120)
     parser.add_argument('-n', '--name', type=str, default="road1")
-    parser.add_argument('-st', '--sig-type', nargs='+', type=str,required=True) 
+    parser.add_argument('-st', '--sig-type', nargs='+',
+                        type=str, required=True)
     args = parser.parse_args()
 
-
-    #sig_type = [('semaphore', 2), ('speed_limit', 3)]  # args.sig_type
-
-    if((args.st_lenght>50) or (args.speed<50)):
+    if((args.st_lenght > 50) or (args.speed < 50)):
         street = Street(args.name, args.speed, args.st_lenght,
-                    arg_tuple_parse(args.sig_type), args.ip_address, args.port)
-        
+                        arg_tuple_parse(args.sig_type), args.ip_address, args.port)
+
         street.run()
-    
     else:
         print("Dati inseriti non sono corretti")
