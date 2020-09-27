@@ -68,6 +68,9 @@ class Street:
                         (segnali.Semaforo(time_semaphore), position))
                     street_signal[-1].run()
 
+                print(
+                    "Il segnale ", street_signal[-1].getName(), "è nella posizione ", position)
+
         # stop fine strada
         street_signal.append((segnali.Stop(), self.__lenght))
         return street_signal
