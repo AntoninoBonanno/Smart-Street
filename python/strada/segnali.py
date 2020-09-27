@@ -29,8 +29,6 @@ class Stop(Segnale):
         self.name="stop"
     def getAction(self):
         return self.action[1]
-    def getName(self):
-        return self.name
 
 class SpeedLimit(Segnale):
     
@@ -43,8 +41,7 @@ class SpeedLimit(Segnale):
         self.new_speed=randint(30,(self.max_speed_road))
     def getSpeed(self):
         return self.new_speed
-    def getName(self):
-        return self.name
+
     def getAction(self,client_speed):
         if (client_speed<self.new_speed):
             return self.action[0]
@@ -68,8 +65,7 @@ class Semaforo(Thread,Segnale):
             return self.action[1]
         if self.status=="yellow":
             return self.action[2]
-    def getName(self):
-        return self.name
+ 
 
     def run(self):
         while True:
