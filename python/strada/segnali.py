@@ -4,6 +4,17 @@ from random import randint
 import base64
 import os
 
+'''
+Segnale è la classe "padre" da cui derivano tutti i segnali ( stop, speed limit ecc. sono specializzazioni di Segnale)
+Ogni segnale ha:
+ - nome
+ - id
+ - azione (che deve effettuare il client in prossimità del segnale)
+ - delta (ci indica quanti metri prima avvisare il client della presenza del segnale)
+
+Per ogni tipologia di segnale viene definita l'opportuna azione, il nome ecc.
+'''
+
 class Segnale:
     def __init__(self):
         self.id_signal= base64.b64encode(os.urandom(6)).decode('ascii')
@@ -19,6 +30,7 @@ class Segnale:
         return self.id_signal
     def getName(self):
         return self.name
+
 
 
 class Stop(Segnale):
@@ -47,7 +59,9 @@ class SpeedLimit(Segnale):
             return self.action[0]
         return self.action[2]
         
-
+'''
+Il semaforo è gestito con un thread
+'''
 class Semaforo(Thread,Segnale):
     
     def __init__(self,durata):
