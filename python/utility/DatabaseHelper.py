@@ -109,6 +109,7 @@ class Database:
         """
 
         if id is None:
+            # se esiste già una strada con lo stesso ip, la aggiorno
             streets = self.getStreets(ipAddress=ip_address)
             if streets:
                 id = streets[0].id
@@ -170,16 +171,17 @@ class Database:
 
         return routes
 
-    def upsertRoute(self, car_id: str, car_ip: str, route_list: list, current_index: int = -1, current_street_position: float = None, id: int = None) -> DB_Route:
+    def upsertRoute(self, car_id: str, car_ip: str, route_list: list = None, current_index: int = None, current_street_position: float = None, finished_at: datetime = None, id: int = None) -> DB_Route:
         """
         Funzione che esegue l'upsert del percorso (inserimento o aggornamento) sul DB
 
         Args:
             car_id (str): l'id della macchina (targa) da associare il percorso
             car_ip (str): l'ip attuale della macchina
-            route_list (list): Lista di strade che formano il porcorso, non può essere aggiornata ma obligatoria per controlli
+            route_list (list, optional): Lista di strade che formano il porcorso, non può essere aggiornata. Defaults to None.
             current_index (int, optional): Indice della lista dove è attualmente la macchina, obligatoria quando si fa l'aggiornamento. Defaults to None.
             current_street_position (int, optional): Posizione attuale della macchina sulla strada dove è attualmente la macchina, obligatoria quando si fa l'aggiornamento. Defaults to None.
+            finished_at (datetime, optional): Data di fine della route. Defaults to None.
             id (int, optional): Id del percorso da aggiornare, se non viene passato viene creata un nuovo percorso. Defaults to None.
 
         Raises:
@@ -189,23 +191,29 @@ class Database:
             DB_Route: Il percorso appena creato
         """
 
-        if(route_list is None):
-            raise Exception("route_list non può essere None")
-
         cursor = self.db.cursor()
         if id is not None:
-            if(current_index is None):
-                raise Exception(
-                    "current_index non può essere None se stai aggiornando una route")
-            if(current_street_position is None):
-                raise Exception(
-                    "current_street_position non può essere None se stai aggiornando una route")
+            values = (car_ip,)
+            query = ""
+            if current_index is not None:
+                query += "`current_index` = %s, "
+                values = (*values, current_index)
 
-            query = "UPDATE `routes` SET `car_ip` = %s, `current_index` = %s, `current_street_position` = %s,  `finished_at` = %s, `updated_at` = %s WHERE (`id` = %s AND `car_id` = %s);"
-            finished_at = datetime.now() if current_index == len(route_list) - 1 else None
-            values = (car_ip, current_index, current_street_position,
-                      finished_at, datetime.now(), id, car_id)
+            if current_street_position is not None:
+                query += "`current_street_position` = %s, "
+                values = (*values, current_street_position)
+
+            if finished_at is not None:
+                query += "`finished_at` = %s, "
+                values = (*values, finished_at)
+
+            query = f"UPDATE `routes` SET `car_ip` = %s, {query} `updated_at` = %s WHERE (`id` = %s AND `car_id` = %s);"
+            values = (*values, datetime.now(), id, car_id)
         else:
+            if(route_list is None):
+                raise Exception(
+                    "route_list non può essere None se stai creando una route")
+
             query = "INSERT INTO `routes` (`car_id`, `car_ip`, `route_list`, `destination`) VALUES (%s, %s, %s, %s);"
             values = (car_id, car_ip, json.dumps(
                 route_list), route_list[-1])

@@ -49,13 +49,13 @@ class Stop(Segnale):
 
 class SpeedLimit(Segnale):
 
-    def __init__(self, max_speed_road):
+    def __init__(self, max_speed_road, force=False):
         super().__init__()
 
         self.delta = 20  # metri
         self.name = "speed_limit"
-        self.max_speed_road = max_speed_road
-        self.new_speed = randint(30, (self.max_speed_road))
+        self.new_speed = randint(
+            30, (max_speed_road)) if force == False else max_speed_road
 
     def getSpeed(self):
         return self.new_speed

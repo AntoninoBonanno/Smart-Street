@@ -95,10 +95,16 @@ def create_route():
         message = f"Hai gia' richiesto l'accesso per la destinazione {destination_street.name}. Raggiungi la destinazione prima di richiederne una nuova."
 
     current_index = route.current_index if route.current_index > -1 else 0
-    token = Auth.create_token(
-        route.id, route.route_list[current_index])  # creo il token
-
     firstStreet = db.getStreets(route.route_list[current_index])[0]
+
+    if route.current_street_position > firstStreet.length:
+        # se la macchina ha già completato la strada e per qualche motivo la strada non è riuscita ad aggiornare la route, lo faccio da qui
+        current_index += 1
+        firstStreet = db.getStreets(route.route_list[current_index])[0]
+        db.upsertRoute(car_id, request.remote_addr, current_index=current_index,
+                       current_street_position=0, id=route.id)
+
+    token = Auth.create_token(route.id, firstStreet.id)  # creo il token
 
     host, port = firstStreet.getIpAddress()
     if not host:
