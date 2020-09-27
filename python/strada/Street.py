@@ -234,22 +234,39 @@ def arg_tuple_parse(arg_list):
             list_signal.append(tuple((field_args[0],int(field_args[1]))))
         else:
             raise Exception("Errore formattazione dati")
-    print(list_signal)
+
+    return list_signal
 
 if __name__ == '__main__':
+
+    '''
+    Esempio Argomenti:
+    -ip 10.11.45.36             --> indirizzo ip del server strada
+    -p 8888                     --> porta server strada
+    -l 100                      --> lunghezza della strada espressa in metri
+    -s 90                       --> velocità massima nella strada espressa in km
+    -n ss189                    --> nome della strada
+    -st stop,2 speed_limit,2    --> lista con nome segnali che devono essere presenti sulla strada e numero.
+
+    '''
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-ip', '--ip-address', type=str, default=None)
     parser.add_argument('-p', '--port', type=int, default=8000)
-    parser.add_argument('-l', '--st-lenght', type=int, default=50)
-    parser.add_argument('-s', '--speed', type=int, default=50)
+    parser.add_argument('-l', '--st-lenght', type=int, default=1000)
+    parser.add_argument('-s', '--speed', type=int, default=120)
     parser.add_argument('-n', '--name', type=str, default="road1")
-    parser.add_argument('-st', '--sig-type', nargs='+', type=str) #-st stop,2 speed_limit,2
+    parser.add_argument('-st', '--sig-type', nargs='+', type=str,required=True) 
     args = parser.parse_args()
 
 
     #sig_type = [('semaphore', 2), ('speed_limit', 3)]  # args.sig_type
 
-    street = Street(args.name, args.speed, args.st_lenght,
+    if((args.st_lenght>50) or (args.speed<50)):
+        street = Street(args.name, args.speed, args.st_lenght,
                     arg_tuple_parse(args.sig_type), args.ip_address, args.port)
-    street.run()
+        
+        street.run()
+    
+    else:
+        print("Dati inseriti non sono corretti")
