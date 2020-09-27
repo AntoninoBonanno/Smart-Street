@@ -25,7 +25,7 @@ def threaded(fn):
 
 
 class Street:
-    def __init__(self, name: str, maxSpeed: int, lenght: int, signal_type: list, ipAddress: str = None, port: int = 0):
+    def __init__(self, name: str, maxSpeed: int, lenght: int, signals_quantity: list, ipAddress: str = None, port: int = 0):
         self.__db = Database()
 
         if ipAddress is None:
@@ -48,17 +48,12 @@ class Street:
         self.__threadCount = 0
         self.__lenght = lenght
         self.__maxSpeed = maxSpeed
-        self.__signal_type = signal_type  # tuple (segnale,posizione)
-        self.__signals = self.__create_signal(5, 5, 10)
+        self.__signals = self.__createSignals(signals_quantity, 5, 5, 10)
 
-        for i in self.__signals:
-            if i[0].getName() == "semaphore":
-                i[0].run()
-
-    def __create_signal(self, step: int, stop_dist: int, time_semaphore: int):
+    def __createSignals(self, signals_quantity: list, step: int, stop_dist: int, time_semaphore: int):
         street_signal = list()
 
-        for i in self.__signal_type:
+        for i in signals_quantity:  # tuple (nome segnale, quantità)
             for count in range(i[1]):
                 while True:
                     position = randrange(0, self.__lenght, step)
@@ -68,40 +63,21 @@ class Street:
                 if (i[0] == "speed_limit"):
                     street_signal.append(
                         (segnali.SpeedLimit(self.__maxSpeed), position))
-                if (i[0] == "stop"):
-                    street_signal.append((segnali.Stop(), position))
                 if (i[0] == "semaphore"):
                     street_signal.append(
                         (segnali.Semaforo(time_semaphore), position))
+                    street_signal[-1].run()
 
         # stop fine strada
         street_signal.append((segnali.Stop(), self.__lenght))
         return street_signal
 
-    def __findSignal(self, client_position: float, client_speed: int):
-        for i in self.__signals:
-            if ((i[1] - client_position < i[0].delta) and (i[1] - client_position > 0)):
-                if(i[0].getName() == "speed_limit"):
-                    return i[0].getAction(client_speed), i[0].getName(), i[0].getSpeed()
-                return i[0].getAction(), i[0].getName(), None
-
-    def __comeBackAction(self, speed_client: int, car_id: str, car_ip: str, db_route_result):
-
-        new_date_time = (datetime.now() - db_route_result.updated_at).seconds
-
-        # stiamo considerando che la velocità ci viene passata in km/h mentre la posizione è in m e il tempo è in s
-        if(db_route_result is not None):
-            old_position = db_route_result.current_street_position
-            new_position = ((speed_client / 3.6) *
-                            new_date_time) + old_position
-
-            if(new_position != old_position):
-                self.__db.upsertRoute(car_id=car_id, car_ip=car_ip, route_list=db_route_result.route_list,
-                                      current_index=db_route_result.current_index, current_street_position=new_position)
-
-            return self.__findSignal(new_position, speed_client), new_position
-
-        raise Exception("Errore, dati non corretti o vuoti")
+    def __findSignal(self, client_position: float):
+        # signal[0] è il segnale, signal[1] è la sua posizione nella strada
+        for signal in self.__signals:
+            if ((signal[1] - client_position < signal[0].delta) and (signal[1] - client_position > 0)):
+                return signal[0]
+        return None
 
     def __checkAuth(self, car_ip: str, car_id: str = None, token_client: str = None):
         if car_id is None:
@@ -159,6 +135,35 @@ class Street:
 
         return DB_Route
 
+    def __comeBackAction(self, car_id: str, car_ip: str, client_speed: int, DB_Route, client_position: float = None):
+
+        new_date_time = (datetime.now() - DB_Route.updated_at).seconds
+
+        if DB_Route is None:
+            raise Exception("Errore, dati non corretti o vuoti")
+
+        old_position = DB_Route.current_street_position
+        new_position = ((client_speed / 3.6) * new_date_time) + old_position
+        if client_position is not None and new_position != client_position:
+            # il client si trova in una posizione diversa, teoricamente il confronto delle posizioni deve sempre coincidere
+            new_position = client_position
+
+        if(new_position != old_position):
+            self.__db.upsertRoute(car_id=car_id, car_ip=car_ip, route_list=DB_Route.route_list,
+                                  current_index=DB_Route.current_index, current_street_position=new_position)
+
+        signal = self.__findSignal(new_position)
+        if signal is None:
+            return new_position, None, "Niente in strada, vai come una scheggia!!"
+
+        action = {
+            "signal": signal.getName(),
+            "action": signal.getAction() if signal.getName() != "speed_limit" else signal.getAction(client_speed),
+            "distance": signal.getDelta(),
+            "speed_limit": signal.getSpeed() if signal.getName() == "speed_limit" else None
+        }
+        return new_position, action, f"Fra {signal.getDelta()}m incontri il segnale {signal.getName()}, l'azione che devi eseguire è {signal.getAction()}"
+
     @threaded
     def __manageCar(self, client, client_address):
         self.__threadCount += 1
@@ -187,17 +192,16 @@ class Street:
 
                 # qui siamo autenticati
                 if 'speed' in data_decoded:
-                    pos = data_decoded['position']
+                    pos = data_decoded['position'] if 'position' in data_decoded else None
                     speed = data_decoded['speed']
 
-                    action, newPos = self.__comeBackAction(
-                        speed, car_id, car_ip, DB_Route)
+                    newPos, action, message = self.__comeBackAction(
+                        car_id, car_ip, speed, client_position=pos, DB_Route=DB_Route)
                     client.send(json.dumps({
                         "status": "success",
-                        "message": f"Hai incontrato il segnale {action[1]}" if action[2] is not None else "Niente in strada, vai come una scheggia!!",
-                        "action": action[0],
-                        "position": newPos,
-                        "limit_speed": action[2]
+                        "message": message,
+                        "action": action,
+                        "position": newPos
                     }).encode())
         except socket.error:
             print("Errore: Client disconnesso - forse è morto")
@@ -230,8 +234,8 @@ if __name__ == '__main__':
     parser.add_argument('-st', '--sig-type', nargs='+', type=str)
     args = parser.parse_args()
 
-    print("Your args are:  ", args)
-    sig_type = [('stop', 1), ('speed_limit', 2)]  # args.sig_type
+   # print("Your args are:  ", args)
+    sig_type = [('semaphore', 2), ('speed_limit', 3)]  # args.sig_type
     street = Street(args.name, args.speed, args.st_lenght,
                     sig_type, args.ip_address, args.port)
     street.run()
