@@ -234,6 +234,9 @@ class Street:
 
 
 def arg_tuple_parse(arg_list):
+    if arg_list is None:
+        return [('semaphore', 2), ('speed_limit', 3)]
+
     list_signal = []
     for i in arg_list:
         field_args = i.split(',')
@@ -255,8 +258,6 @@ if __name__ == '__main__':
     parser.add_argument('-st', '--sig-type', nargs='+',
                         type=str)  # -st stop,2 speed_limit,2
     args = parser.parse_args()
-
-    # sig_type = [('semaphore', 2), ('speed_limit', 3)]  # args.sig_type
 
     street = Street(args.name, args.speed, args.st_lenght,
                     arg_tuple_parse(args.sig_type), args.ip_address, args.port)
