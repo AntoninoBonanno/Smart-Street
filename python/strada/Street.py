@@ -46,18 +46,19 @@ class Street:
         self.__available = DB_Street.available
 
         self.__threadCount = 0
-        self.__lenght = lenght
+        self.__lenght = lenght  # metri
         self.__maxSpeed = maxSpeed
-        self.__signals = self.__createSignals(signals_quantity, 5, 5, 10)
+        self.__signals = self.__createSignals(signals_quantity, 20, 5)
 
-    def __createSignals(self, signals_quantity: list, step: int, stop_dist: int, time_semaphore: int):
+    def __createSignals(self, signals_quantity: list, step: int, time_semaphore: int):
         street_signal = list()
+        stop = segnali.Stop()
 
         for i in signals_quantity:  # tuple (nome segnale, quantità)
             for count in range(i[1]):
                 while True:
                     position = randrange(5, self.__lenght, step)
-                    if(position not in (j[1] for j in street_signal) and position < (self.__lenght - stop_dist)):
+                    if(position not in (j[1] for j in street_signal) and position < (self.__lenght - stop.getDelta())):
                         break
 
                 if (i[0] == "speed_limit"):
@@ -72,11 +73,15 @@ class Street:
                     "Il segnale ", street_signal[-1][0].getName(), "è nella posizione ", position)
 
         # stop fine strada
-        street_signal.append((segnali.Stop(), self.__lenght))
+        street_signal.append((stop, self.__lenght))
         return street_signal
 
     def __findSignal(self, client_position: float):
         # signal[0] è il segnale, signal[1] è la sua posizione nella strada
+        if client_position >= self.__lenght:
+            stop = self.__signals[-1]
+            return stop[0], stop[1]
+
         for signal in self.__signals:
             if ((signal[1] - client_position < signal[0].delta) and (signal[1] - client_position > 0)):
                 return signal[0], signal[1]
@@ -139,9 +144,6 @@ class Street:
         return DB_Route
 
     def __comeBackAction(self, car_id: str, car_ip: str, client_speed: int, DB_Route, client_position: float = None):
-
-        new_date_time = (datetime.now() - DB_Route.updated_at).seconds
-
         if DB_Route is None:
             raise Exception("Errore, dati non corretti o vuoti")
 
@@ -152,7 +154,7 @@ class Street:
 
         signal, signal_position = self.__findSignal(client_position)
         if signal is None:
-            return client_position, None, "Niente in strada, vai come una scheggia!!"
+            return None, "Niente in strada, vai come una scheggia!!"
 
         name_signal = signal.getName()
         action = {
@@ -161,28 +163,23 @@ class Street:
             "distance": signal_position - client_position,
             "speed_limit": signal.getSpeed() if name_signal == "speed_limit" else None
         }
-        return action, f"Fra {action['distance']} m incontri il segnale {name_signal}, l'azione che devi eseguire è {action['action']}, limite {action['speed_limit']}"
+        return action, (f"Fra {action['distance']:.2f}m incontri il segnale {name_signal}, l'azione che devi eseguire e' {action['action']}, limite {action['speed_limit']}")
 
     @threaded
     def __manageCar(self, client, client_address):
         self.__threadCount += 1
         car_ip = f"{client_address[0]}:{client_address[1]}"
 
+        client.settimeout(10.0)
         client.send(json.dumps({
             "status": "success",
             "message": "Welcome to the Server"
         }).encode())
 
         try:
-            last_recv_datetime = datetime.now()
             while True:
-                data = client.recv(2048).decode()
-                if not data:
-                    if (last_recv_datetime - datetime.now()).seconds > 10:
-                        raise Exception("Macchina disconnessa")
-                    continue
-
-                last_recv_datetime = datetime.now()
+                # è bloccante, va avanti solo se riceve data
+                data = client.recv(1024).decode()
 
                 data_decoded = json.loads(data)  # data è json
                 car_id = data_decoded['targa'] if 'targa' in data_decoded else None
