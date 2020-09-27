@@ -53,6 +53,9 @@ class Semaforo(Thread,Segnale):
     def __init__(self,durata):
         Thread.__init__(self)
         Segnale.__init__(self)
+        '''
+        con multi-ereditarità super non funziona, quindi bisogna utilizzare il riferimento diretto al costruttore delle classi padre
+        '''
         self.delta=8
         self.status="red"
         self.durata=durata
