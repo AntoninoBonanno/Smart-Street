@@ -51,8 +51,8 @@ class SpeedLimit(Segnale):
 class Semaforo(Thread,Segnale):
     
     def __init__(self,durata):
-        super().__init__()
         Thread.__init__(self)
+        Segnale.__init__(self)
         self.delta=8
         self.status="red"
         self.durata=durata
