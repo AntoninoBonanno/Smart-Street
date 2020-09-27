@@ -56,7 +56,7 @@ class Street:
         for i in signals_quantity:  # tuple (nome segnale, quantità)
             for count in range(i[1]):
                 while True:
-                    position = randrange(0, self.__lenght, step)
+                    position = randrange(5, self.__lenght, step)
                     if(position not in (j[1] for j in street_signal) and position < (self.__lenght - stop_dist)):
                         break
 
@@ -66,10 +66,10 @@ class Street:
                 if (i[0] == "semaphore"):
                     street_signal.append(
                         (segnali.Semaforo(time_semaphore), position))
-                    street_signal[-1].run()
+                    street_signal[-1][0].start()
 
                 print(
-                    "Il segnale ", street_signal[-1].getName(), "è nella posizione ", position)
+                    "Il segnale ", street_signal[-1][0].getName(), "è nella posizione ", position)
 
         # stop fine strada
         street_signal.append((segnali.Stop(), self.__lenght))
@@ -79,8 +79,8 @@ class Street:
         # signal[0] è il segnale, signal[1] è la sua posizione nella strada
         for signal in self.__signals:
             if ((signal[1] - client_position < signal[0].delta) and (signal[1] - client_position > 0)):
-                return signal[0]
-        return None
+                return signal[0], signal[1]
+        return None, None
 
     def __checkAuth(self, car_ip: str, car_id: str = None, token_client: str = None):
         if car_id is None:
@@ -155,17 +155,18 @@ class Street:
             self.__db.upsertRoute(car_id=car_id, car_ip=car_ip, route_list=DB_Route.route_list,
                                   current_index=DB_Route.current_index, current_street_position=new_position)
 
-        signal = self.__findSignal(new_position)
+        signal, signal_position = self.__findSignal(new_position)
         if signal is None:
             return new_position, None, "Niente in strada, vai come una scheggia!!"
 
+        name_signal = signal.getName()
         action = {
-            "signal": signal.getName(),
-            "action": signal.getAction() if signal.getName() != "speed_limit" else signal.getAction(client_speed),
-            "distance": signal.getDelta(),
-            "speed_limit": signal.getSpeed() if signal.getName() == "speed_limit" else None
+            "signal": name_signal,
+            "action": signal.getAction() if name_signal != "speed_limit" else signal.getAction(client_speed),
+            "distance": signal_position - new_position,
+            "speed_limit": signal.getSpeed() if name_signal == "speed_limit" else None
         }
-        return new_position, action, f"Fra {signal.getDelta()}m incontri il segnale {signal.getName()}, l'azione che devi eseguire è {signal.getAction()}"
+        return new_position, action, f"Fra {action['distance']} m incontri il segnale {name_signal}, l'azione che devi eseguire è {action['action']}"
 
     @threaded
     def __manageCar(self, client, client_address):
