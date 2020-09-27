@@ -174,9 +174,15 @@ class Street:
         }).encode())
 
         try:
+            last_recv_datetime = datetime.now()
             while True:
-                client.settimeout(10.0)
                 data = client.recv(2048).decode()
+                if not data:
+                    if (last_recv_datetime - datetime.now()).seconds > 10:
+                        raise Exception("Macchina disconnessa")
+                    continue
+
+                last_recv_datetime = datetime.now()
 
                 data_decoded = json.loads(data)  # data è json
                 car_id = data_decoded['targa'] if 'targa' in data_decoded else None
@@ -250,8 +256,7 @@ if __name__ == '__main__':
     parser.add_argument('-l', '--st-lenght', type=int, default=1000)
     parser.add_argument('-s', '--speed', type=int, default=120)
     parser.add_argument('-n', '--name', type=str, default="road1")
-    parser.add_argument('-st', '--sig-type', nargs='+',
-                        type=str, required=True)
+    parser.add_argument('-st', '--sig-type', nargs='+', type=str)
     args = parser.parse_args()
 
     if((args.st_lenght > 50) or (args.speed < 50)):
