@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+
 //public
 /**
 * Funzione che data un indirizzo ip crea la connessione con il punto di accesso, ed effettua la get per richiedere le destinazioni
@@ -154,27 +155,37 @@ void Car::runStreet(string host, string port, string accessToken) {
    
     int MAX_BUF_LENGTH = 4096;
     vector<char> rcvbuffer(MAX_BUF_LENGTH);
+
+    
+    int tempo_iniziale=clock(); //tempo in millisecondi
+
+
     while(true) {
+        
         iResult = recv(ConnectSocket, &rcvbuffer[0], rcvbuffer.size(), 0);
         if (iResult > 0){
             //printf("Bytes received: %d\n", iResult);
+            Sleep(1000);
             string rcv;
             rcv.clear();
             rcv.append(rcvbuffer.cbegin(), rcvbuffer.cend());            
             Json::Value response=jsonParse(rcv);
-            //cout << response<<endl << endl;
+            //cout << response <<endl << endl;
             cout <<"Messaggio ricevuto: "<<response["message"]<<endl;
-            cout << response["status"]<<endl; 
-            cout << response["action"] << endl;
+            //cout << response["status"]<<endl; 
+            //cout <<"azione: "<< response["action"] << endl;            
             if (response["status"].asString() == "success") {
-                doAction(response["action"].asString(),response["position"].asDouble(),response["limit_speed"].asDouble());
+                //cout << "posizione dalla strada: " << response["position"] << endl;
+               doAction(response["action"], tempo_iniziale);
+                
             }
             else break;            
         }
 
-        //invio poszione/targa/velocità       
+        //invio targa/poszione/velocità       
         string sendinfo = "{\"targa\":\"" + code + "\",\"position\":" + to_string(position) + ",\"speed\":" + to_string(current_speed) + "}";
-        cout <<"Ti voglio inviare i miei dati: "<< sendinfo<<endl;       
+        cout <<"Ti invio i miei dati: "<< sendinfo<<endl << endl;
+        tempo_iniziale = clock();
         iResult = send(ConnectSocket, sendinfo.c_str(), sendinfo.size(), 0);
         if (iResult == SOCKET_ERROR) {
             cout << "send failed: "<< WSAGetLastError()<< endl;;
@@ -182,6 +193,7 @@ void Car::runStreet(string host, string port, string accessToken) {
             WSACleanup();
             exit(0);
         }
+
     }
 
     // shutdown the send half of the connection since no more data will be sent
@@ -199,20 +211,38 @@ void Car::runStreet(string host, string port, string accessToken) {
 }
 
 /**
-* Funzione che data un azione e la posizione, modifica la sua velocità in base l'azione
+* Funzione che data un azione, modifica la sua velocità in base l'azione
 *
-* @param action: azione che implica il cambio di velocità
-*        posizione: posizione della auto
+* @param action: Json con signal, e action
+*        start: tempo inziale 
 */
-void Car::doAction(string action, double posizione,double limit) {
-    double current_limit = limit; //aggiungere il limete
-    if (action == "accelera" && current_speed< speed_max) {        
-        current_speed= current_speed+ (rand() % 10 + 1);
+void Car::doAction(Json::Value action,int start) {
+    static int current_limit = speed_max; //aggiungere il limite
+
+    //cout << "La differenza e':  " << ((clock()-start)/1000.0) << endl;
+    position = ((current_speed / 3.6) * ((clock()-start)/1000.0)) + position;
+
+
+    if (action.size()!= 0) {
+        if (action["signal"].asString() == "speed_limit") current_limit = action["speed_limit"].asInt();
+        else if (action["signal"].asString() == "stop") current_limit = speed_max;
+
+
+        if (action["action"].asString() == "fermati") {
+            int speed_to_stop = (action["distance"].asInt() * 10) / 3;
+            if (speed_to_stop < current_speed) current_speed = speed_to_stop;            
+        }
+        else if (action["action"].asString() == "rallenta" && current_speed > 20) current_speed = current_speed - (rand() % 10 + 1);        
     }
-    else if (action == "rallenta") current_speed= current_speed - (rand() % 10 + 1);
-    else if (action == "fermati") current_speed = 0;
+    if (action.size() == 0 || (action["action"].asString()=="accelera" && action["signal"].asString()!="speed_limit")) { //devi accellerare                       
+        if (current_speed> current_limit/2) current_speed = current_speed + 1;
+        else current_speed = current_speed + (rand() % 10 + 1);
+    }
+    if (current_speed > current_limit) current_speed = current_limit;
     //calcolare la speed in base alla velocità 
-    position = posizione;
+    //cout << "la posizione dovrebbe essere: " << position << endl;
+    //cout << "la velocità dovrebbe essere: " << current_speed << endl;
+    
 }
 
 /**

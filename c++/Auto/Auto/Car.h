@@ -13,10 +13,10 @@ class Car
         void runStreet(string host, string port, string accessToken); //connessione con la strada
         tuple<string,string,string> richiestaAccess(string destinazione);
         void sendInfo(); //comunico la mia posizone e current_speed e la targa alla strada
-        void doAction(string action, double position,double limit);
+        void doAction(Json::Value action, int start);
         Json::Value jsonParse(string r);
     public:
-        int speed_max;       
+        int speed_max;
         string code;
 
         Car(int speed_max, string code) {  // Constructor
