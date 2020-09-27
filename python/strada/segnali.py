@@ -75,3 +75,5 @@ class Semaforo(Thread,Segnale):
             time.sleep(self.durata)
             self.status="yellow"
             time.sleep(self.durata)
+
+    #per avviare il thread dal main usare nomethread.start()
