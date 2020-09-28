@@ -1,0 +1,24 @@
+Guida per istallare libreria QT, assumendo che go sia già istallato. 
+
+
+In cmd inserire:
+
+set GO111MODULE=off
+go get -v github.com/therecipe/qt/cmd/... && for /f %v in ('go env GOPATH') do %v\bin\qtsetup test && %v\bin\qtsetup -test=false
+
+
+
+Andare nella cartella dove sono è stato installato QT, la cartella avrà le seguenti directory:
+
+-src
+-pkg
+-bin 
+
+In src creare la cartella che contiene il codice per la grafica, nel nostro caso si chiamerà GUI
+
+all'interno di GUI inserire il codice main.go e dentro la cartella qml inserire il codice app.qml
+
+
+per deployare andare dentro src e lanciare il seguente: 
+	qtdeploy build desktop GUI
+
