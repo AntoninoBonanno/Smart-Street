@@ -19,6 +19,7 @@ CREATE TABLE `street_smart`.`routes` (
   `current_index` INT NOT NULL DEFAULT -1,
   `current_street_position` FLOAT UNSIGNED NULL DEFAULT NULL,
   `destination` INT UNSIGNED, 
+  `connected` TINYINT NOT NULL DEFAULT 0,
   `finished_at` DATETIME NULL DEFAULT NULL,
   `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
