@@ -144,7 +144,7 @@ void Car::runStreet(string host, string port, string accessToken) {
   
     iResult = send(ConnectSocket, sendbuf.c_str(), sendbuf.size(), 0);
     if (iResult == SOCKET_ERROR) {
-        cout << "send failed: "<< WSAGetLastError()<< endl;;
+        cout << "send failed(1): "<< WSAGetLastError()<< endl;;
         closesocket(ConnectSocket);
         WSACleanup();
         exit(0);
@@ -161,7 +161,7 @@ void Car::runStreet(string host, string port, string accessToken) {
 
 
     while(true) {
-        Sleep(1000);
+        Sleep(500);
         iResult = recv(ConnectSocket, &rcvbuffer[0], rcvbuffer.size(), 0);
         if (iResult > 0){
             //printf("Bytes received: %d\n", iResult);
@@ -173,11 +173,32 @@ void Car::runStreet(string host, string port, string accessToken) {
             //cout << response <<endl << endl;
             cout <<"Messaggio ricevuto: "<<response["message"]<<endl;
             //cout << response["status"]<<endl; 
-            //cout <<"azione: "<< response["action"] << endl;            
+            cout <<"azione: "<< response["action"] << endl;            
             if (response["status"].asString() == "success") {
-                //cout << "posizione dalla strada: " << response["position"] << endl;
-               doAction(response["action"], tempo_iniziale);
                 
+                cout << "posizione dalla strada: " << response["position"] << endl;
+                doAction(response["action"], tempo_iniziale, response["position"].asDouble());
+
+
+               if (response["action"]["action"].asString() == "next") {
+                   iResult = shutdown(ConnectSocket, SD_SEND);
+                   // shutdown the send half of the connection since no more data will be sent
+                   if (iResult == SOCKET_ERROR) {
+                       cout << "shutdown failed: " << WSAGetLastError();
+                       closesocket(ConnectSocket);
+                       WSACleanup();
+                       exit(0);
+                   }
+                   // cleanup
+                   closesocket(ConnectSocket);
+                   WSACleanup();
+
+                   runStreet(response["host"].asString(), response["port"].asString(), response["access_token"].asString());
+               }
+               else if (response["action"]["action"].asString() == "end") {
+                   cout << "sei arrivato alla destinazione" << endl;
+                   exit(0);
+               }
             }
             else break;            
         }
@@ -188,7 +209,7 @@ void Car::runStreet(string host, string port, string accessToken) {
         tempo_iniziale = clock();
         iResult = send(ConnectSocket, sendinfo.c_str(), sendinfo.size(), 0);
         if (iResult == SOCKET_ERROR) {
-            cout << "send failed: "<< WSAGetLastError()<< endl;;
+            cout << "send failed(2): "<< WSAGetLastError()<< endl;;
             closesocket(ConnectSocket);
             WSACleanup();
             exit(0);
@@ -216,12 +237,13 @@ void Car::runStreet(string host, string port, string accessToken) {
 * @param action: Json con signal, e action
 *        start: tempo inziale 
 */
-void Car::doAction(Json::Value action,int start) {
+void Car::doAction(Json::Value action,int start,double position_server) {
     static int current_limit = speed_max; //aggiungere il limite
-
+    
     //cout << "La differenza e':  " << ((clock()-start)/1000.0) << endl;
     position = ((current_speed / 3.6) * ((clock()-start)/1000.0)) + position;
-
+    cout << "mia posizione: " << position<<endl;
+    if (position_server > position) position = position_server;
 
     if (action.size()!= 0) {
         if (action["signal"].asString() == "speed_limit") current_limit = action["speed_limit"].asInt();
@@ -230,12 +252,12 @@ void Car::doAction(Json::Value action,int start) {
 
         if (action["action"].asString() == "fermati") {
             int speed_to_stop = (action["distance"].asInt() * 10) / 3;
-            if (speed_to_stop < current_speed) current_speed = speed_to_stop;            
+            if (speed_to_stop < current_speed) current_speed = speed_to_stop; //da sistemare, perchè cosi non scendo mai allo 0           
         }
         else if (action["action"].asString() == "rallenta" && current_speed > 20) current_speed = current_speed - (rand() % 10 + 1);        
     }
-    if (action.size() == 0 || (action["action"].asString()=="accelera" && action["signal"].asString()!="speed_limit")) { //devi accellerare                       
-        if (current_speed> current_limit/2) current_speed = current_speed + 1;
+    if (action.size() == 0 || (action["action"].asString()=="accelera")) { //devi accellerare                       
+        if (current_speed> current_limit/2) current_speed = current_speed + 2;
         else current_speed = current_speed + (rand() % 10 + 1);
     }
     if (current_speed > current_limit) current_speed = current_limit;
