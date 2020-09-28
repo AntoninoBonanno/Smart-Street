@@ -7,18 +7,24 @@ using namespace std;
 
 int main(int argc, char* argv[])
 {
-    /*cout << "Inserisci targa: ";
-    cin >> argv[0];
-    Car macchina(2, argv[0]);*/
-    Car macchina(100,"EZ769FY");
+    string targa= "EZ769FY";
+    int speed_max=100;
+    /*
+    cout << "Inserisci targa: ";
+    cin >> targa;
+    cout << "Inserisci speed_max: ";
+    cin >> speed_max;*/
+
+    Car macchina(speed_max, targa);
+    
     Json::Value streets;
-    streets=macchina.getDestinations("127.0.0.1:5000");
-    int x = 0;
+    streets=macchina.getDestinations("127.0.0.1:5000"); //indirizzo PA
+    int destinazione = 0;
     do {
         cout << "Scegli la tua destinazione[id]" << endl;
-        cin >> x;
-    } while (x == 0 || x>streets.size());
-    macchina.goToDestination(to_string(x));
+        cin >> destinazione;
+    } while (destinazione == 0 || destinazione >streets.size());
+    macchina.goToDestination(to_string(destinazione));
 }
 
 
