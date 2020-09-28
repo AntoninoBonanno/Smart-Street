@@ -63,10 +63,10 @@ def create_route():
             abort(make_response(
                 jsonify(message="Destinazione attualmente non disponibile"), 400))
 
-        streets = db.getStreets()
+        streets = db.getStreets(available=True)
         # recupero la lista di tutte le strade escludendo quella passata nella funzione, perchè è la strada da raggiungere
         street_ids = [
-            street.id for street in streets if (street.id != street_id and street.available == True)]
+            street.id for street in streets if (street.id != street_id)]
         streets_len = len(street_ids) - 1
 
         route_list = []
@@ -97,7 +97,7 @@ def create_route():
     current_index = route.current_index if route.current_index > -1 else 0
     firstStreet = db.getStreets(route.route_list[current_index])[0]
 
-    if (route.current_street_position is not None) and (route.current_street_position> firstStreet.length):
+    if (route.current_street_position is not None) and (route.current_street_position > firstStreet.length):
         # se la macchina ha già completato la strada e per qualche motivo la strada non è riuscita ad aggiornare la route, lo faccio da qui
         current_index += 1
         firstStreet = db.getStreets(route.route_list[current_index])[0]

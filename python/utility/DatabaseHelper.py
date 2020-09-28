@@ -41,8 +41,9 @@ class DB_Route:
         self.current_index = db_data[4]
         self.current_street_position = db_data[5]
         self.destination = db_data[6]
-        self.finished_at = db_data[7]
-        self.updated_at = db_data[8]
+        self.connected = db_data[7]
+        self.finished_at = db_data[8]
+        self.updated_at = db_data[9]
 
 
 class Database:
@@ -60,32 +61,39 @@ class Database:
         print("Chiudo la connessione con il DB")
         self.db.close()
 
-    def getStreets(self, id: int = None, ipAddress: str = None) -> [DB_Street]:
+    def getStreets(self, id: int = None, ipAddress: str = None, available: bool = None) -> [DB_Street]:
         """
         Funzione che restituisce le strade dal DB
 
         Args:
             id (int, optional): Se viene passato un id, effettua la ricerca sull'id specificato. Defaults to None.
             ipAddress (str, optional): Se viene passato ipAddress, effettua la ricerca sull'ipAddress specificato. Defaults to None.
+            available (bool, optional): Se viene passato, ricerca se le strade sono available oppure no. Defaults to True.
         Returns:
             [DB_Street]: lista delle strade recuperate
         """
 
         cursor = self.db.cursor()
-        query = "SELECT * FROM `streets`"
+        query = ""
         values = None
-        if(id is not None):
+        if id is not None:
             query += " WHERE `id` = %s"
             values = (id,)
 
-        if(ipAddress is not None):
-            if (id is not None):
+        if ipAddress is not None:
+            if id is not None:
                 query += " AND `ip_address` = %s"
                 values = (id, ipAddress)
             else:
                 query += " WHERE `ip_address` = %s"
                 values = (ipAddress,)
-        cursor.execute(query, values)
+
+        if available is not None:
+            query += (" AND `available` = %s" if query !=
+                      "" else " WHERE `available` = %s")
+            values = (available,) if values is None else (*values, available)
+
+        cursor.execute("SELECT * FROM `streets`" + query, values)
 
         streets = []
         for db_data in cursor.fetchall():
@@ -130,14 +138,15 @@ class Database:
             return None
         return streets[0]
 
-    def getRoutes(self, id: int = None, car_id: str = None, finished: bool = None) -> [DB_Route]:
+    def getRoutes(self, id: int = None, car_id: str = None, finished: bool = None, connected: bool = None) -> [DB_Route]:
         """
         Funzione che restituisce i percorsi dal DB
 
         Args:
             id (int, optional): Se viene passato un id, effettua la ricerca sull'id specificato. Defaults to None.
             car_id (str, optional): Se viene passato un car_id, effettua la ricerca sul car_id specificato. Defaults to None.
-            finished (str, optional): Se viene passato un car_id, effettua la ricerca sul car_id specificato. Defaults to None.
+            finished (bool, optional): Se viene passato True, ricerca le route completate. Defaults to None.
+            connected (bool, optional): Se viene passato True, ricerca le route che hanno i client connessi. Defaults to None.
 
         Returns:
             [DB_Route]: lista dei percorsi recuperati
@@ -163,6 +172,14 @@ class Database:
                       "" else " AND `finished_at` is ")
             query += "not null" if finished == True else "null"
 
+        if connected is not None:
+            if query == "":
+                query += " WHERE `connected` = %s"
+                values = (connected,)
+            else:
+                query += " AND `connected` = %s"
+                values = (*values, connected)
+
         cursor.execute("SELECT * FROM `routes`" + query, values)
 
         routes = []
@@ -171,7 +188,7 @@ class Database:
 
         return routes
 
-    def upsertRoute(self, car_id: str, car_ip: str, route_list: list = None, current_index: int = None, current_street_position: float = None, finished_at: datetime = None, id: int = None) -> DB_Route:
+    def upsertRoute(self, car_id: str, car_ip: str, route_list: list = None, current_index: int = None, current_street_position: float = None, finished_at: datetime = None, connected: bool = None, id: int = None) -> DB_Route:
         """
         Funzione che esegue l'upsert del percorso (inserimento o aggornamento) sul DB
 
@@ -182,6 +199,7 @@ class Database:
             current_index (int, optional): Indice della lista dove è attualmente la macchina, obligatoria quando si fa l'aggiornamento. Defaults to None.
             current_street_position (int, optional): Posizione attuale della macchina sulla strada dove è attualmente la macchina, obligatoria quando si fa l'aggiornamento. Defaults to None.
             finished_at (datetime, optional): Data di fine della route. Defaults to None.
+            connected (bool, optional): Flag se il client è connesso oppure no. Defaults to None.
             id (int, optional): Id del percorso da aggiornare, se non viene passato viene creata un nuovo percorso. Defaults to None.
 
         Raises:
@@ -206,6 +224,10 @@ class Database:
             if finished_at is not None:
                 query += "`finished_at` = %s, "
                 values = (*values, finished_at)
+
+            if connected is not None:
+                query += "`connected` = %s, "
+                values = (*values, connected)
 
             query = f"UPDATE `routes` SET `car_ip` = %s, {query} `updated_at` = %s WHERE (`id` = %s AND `car_id` = %s);"
             values = (*values, datetime.now(), id, car_id)

@@ -154,57 +154,40 @@ void Car::runStreet(string host, string port, string accessToken) {
     vector<char> rcvbuffer(MAX_BUF_LENGTH);
 
     int tempo_iniziale=clock(); //tempo in millisecondi
-
+    Json::Value response;
+    //inizio scambio messaggi
     while(true) {
-        Sleep(500);
+        Sleep(50);
         iResult = recv(ConnectSocket, &rcvbuffer[0], rcvbuffer.size(), 0);
         if (iResult > 0){
             //printf("Bytes received: %d\n", iResult);
-           
             string rcv;
             rcv.clear();
             rcv.append(rcvbuffer.cbegin(), rcvbuffer.cend());            
-            Json::Value response=jsonParse(rcv);
+            response=jsonParse(rcv);
             //cout << response <<endl << endl;
             cout <<"Messaggio ricevuto: "<<response["message"]<<endl;
             //cout << response["status"]<<endl; 
-            cout <<"azione: "<< response["action"] << endl;  
+            //cout <<"azione: "<< response["action"] << endl;  
 
             if (response["status"].asString() == "success") {
                 
-                cout << "posizione dalla strada: " << response["position"] << endl;
+                //cout << "posizione dalla strada: " << response["position"] << endl;
                 doAction(response["action"], tempo_iniziale, response["position"].asDouble());
 
                 //se ho finito la strada corrente, chiudo la connessione e proseguo per la successiva
-               if (response["action"]["action"].asString() == "next") {
-                   // chiudo la connessione al server(strada corrente)
-                   iResult = shutdown(ConnectSocket, SD_SEND);                   
-                   if (iResult == SOCKET_ERROR) {
-                       cout << "shutdown failed: " << WSAGetLastError();
-                       closesocket(ConnectSocket);
-                       WSACleanup();
-                       exit(0);
-                   }
-                   // cleanup
-                   closesocket(ConnectSocket);
-                   WSACleanup();
-
-                   // richiamo la funzione, per percorrere la nuova strada. 
-                  runStreet(response["action"]["host"].asString(), response["action"]["port"].asString(), response["action"]["access_token"].asString());
-               }
+               if (response["action"]["action"].asString() == "next" || response["action"]["action"].asString() == "end") break;
                //se ho raggiunto la destinazione ho finito
-               else if (response["action"]["action"].asString() == "end") {
-                   cout << "sei arrivato alla destinazione" << endl;
-                   exit(0);
-               }
+               tempo_iniziale = clock();
             }
             else break;            
         }
+        
 
         //invio targa/poszione/velocità       
         string sendinfo = "{\"targa\":\"" + code + "\",\"position\":" + to_string(position) + ",\"speed\":" + to_string(current_speed) + "}";
         cout <<"Ti invio i miei dati: "<< sendinfo<<endl << endl;
-        tempo_iniziale = clock();
+        
         iResult = send(ConnectSocket, sendinfo.c_str(), sendinfo.size(), 0);
         if (iResult == SOCKET_ERROR) {
             cout << "send failed(2): "<< WSAGetLastError()<< endl;;
@@ -214,6 +197,7 @@ void Car::runStreet(string host, string port, string accessToken) {
         }
 
     }
+
 
     // chiudo la connessione al server
     iResult = shutdown(ConnectSocket, SD_SEND);
@@ -226,6 +210,9 @@ void Car::runStreet(string host, string port, string accessToken) {
     closesocket(ConnectSocket);
     WSACleanup();
 
+    // richiamo la funzione, per percorrere la nuova strada. 
+    if (response["action"]["action"].asString() == "next" && response["action"]["host"].size()!=0 && response["action"]["port"].size()!=0) 
+        runStreet(response["action"]["host"].asString(), response["action"]["port"].asString(), response["action"]["access_token"].asString()); //potrebbe andare in overflow
 }
 
 /**
@@ -239,8 +226,8 @@ void Car::doAction(Json::Value action,int start,double position_server) {
     
     //cout << "La differenza e':  " << ((clock()-start)/1000.0) << endl;
     position = ((current_speed / 3.6) * ((clock()-start)/1000.0)) + position;
-    cout << "mia posizione: " << position<<endl;
-    if (position_server > position) position = position_server;
+    //cout << "mia posizione: " << position<<endl;
+    //if (position_server > position) position = position_server; 
 
     if (action.size()!= 0) { //
         if (action["signal"].asString() == "speed_limit") current_limit = action["speed_limit"].asInt();
@@ -256,8 +243,9 @@ void Car::doAction(Json::Value action,int start,double position_server) {
     if (action.size() == 0 || (action["action"].asString()=="accelera")) { //In questi casi si deve accelerare                      
         if (current_speed> current_limit/2) current_speed = current_speed + 2;
         else current_speed = current_speed + (rand() % 10 + 1);
+        if (current_speed > current_limit) current_speed = current_limit;
     }
-    if (current_speed > current_limit) current_speed = current_limit;
+    
 }
 
 /**

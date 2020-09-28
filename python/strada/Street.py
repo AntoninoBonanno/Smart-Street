@@ -45,7 +45,7 @@ class Street:
 
         self.__id = DB_Street.id  # l'id della strada è l'id del db
 
-        self.__threadCount = 0
+        self.__connectedClient = {}
         self.__lenght = lenght  # metri
         self.__maxSpeed = maxSpeed  # limite massimo che si può raggiungere nella strada
         self.__signals = self.__createSignals(
@@ -165,7 +165,8 @@ class Street:
         len_route_list = len(DB_Route.route_list)
         if current_index >= 0 and current_index < len_route_list and DB_Route.route_list[current_index] == self.__id and DB_Route.current_street_position < self.__lenght:
             #  è già autenticato
-            self.__db.upsertRoute(car_id, car_ip, id=DB_Route.id)
+            self.__db.upsertRoute(
+                car_id, car_ip, connected=True, id=DB_Route.id)
             return DB_Route
 
         if current_index + 1 >= len_route_list or DB_Route.route_list[current_index + 1] != self.__id:
@@ -174,7 +175,7 @@ class Street:
 
         # ho autenticato l'utente e aggiorno la route
         self.__db.upsertRoute(car_id, car_ip, current_index=(
-            current_index + 1), current_street_position=0, id=DB_Route.id)
+            current_index + 1), current_street_position=0, connected=True, id=DB_Route.id)
 
         return DB_Route
 
@@ -204,6 +205,20 @@ class Street:
         else:
             self.__db.upsertRoute(
                 car_id, car_ip, current_street_position=client_position, id=DB_Route.id)
+
+        for clients in self.__connectedClient:
+            if clients == car_id:
+                continue
+
+            position_next = self.__connectedClient[clients]
+            if position_next > client_position and position_next - client_position <= 30:
+                action = {
+                    "signal": "auto",
+                    "action": "fermati",
+                    "distance": position_next - client_position,
+                    "speed_limit": None
+                }
+                return action, client_position, f"Fra {action['distance']:.2f}m c'è una macchina, l'azione che devi eseguire e' {action['action']}."
 
         signal, signal_position = self.__findSignal(client_position)
         if signal is None:
@@ -254,14 +269,7 @@ class Street:
             client ([type]): [description]
             client_address ([type]): [description]
         """
-
-        self.__threadCount += 1
         car_ip = f"{client_address[0]}:{client_address[1]}"
-
-        client.send(json.dumps({
-            "status": "success",
-            "message": "Welcome to the Server"
-        }).encode())
 
         try:
             while True:
@@ -275,18 +283,26 @@ class Street:
                 DB_Route = self.__checkAuth(car_ip, car_id, access_token)
 
                 # qui siamo autenticati
-                if 'speed' in data_decoded:
-                    pos = data_decoded['position'] if 'position' in data_decoded else None
-                    speed = data_decoded['speed']
+                if 'position' in data_decoded:
+                    pos = data_decoded['position']
+                    speed = data_decoded['speed'] if 'speed' in data_decoded else None
 
                     action, position, message = self.__comeBackAction(
                         car_id, car_ip, speed, client_position=pos, DB_Route=DB_Route)
+
+                    self.__connectedClient[car_id] = position
                     client.send(json.dumps({
                         "status": "success",
                         "message": message,
                         "action": action,
                         "position": position
                     }).encode())
+                else:
+                    if access_token is not None:
+                        client.send(json.dumps({
+                            "status": "success",
+                            "message": "Welcome to the Server"
+                        }).encode())
 
         except socket.error:
             print("Errore: Client disconnesso - forse è morto")
@@ -295,8 +311,13 @@ class Street:
                 "status": "error", "message": str(e)
             }).encode())
 
+        if 'car_id' in locals():
+            del self.__connectedClient[car_id]
+            if 'DB_Route' in locals():
+                self.__db.upsertRoute(
+                    car_id, car_ip, connected=False, id=DB_Route.id)
+
         client.close()
-        self.__threadCount -= 1
 
     def run(self):
         """[summary]
@@ -305,7 +326,10 @@ class Street:
         print(f"Street is listening on {self.__ipAddress}:{self.__port}")
         while True:
             client, client_address = self.__s.accept()
-            print(f'Connected to Car: {client_address[0]}:{client_address[1]}')
+            print(
+                f'Connesso con la macchina: {client_address[0]}:{client_address[1]}')
+            print(
+                f'Macchine attualmente connesse: {len(self.__connectedClient) + 1 }')
             handle = self.__manageCar(client, client_address)
 
         self.__s.close()
