@@ -11,20 +11,34 @@ ApplicationWindow{
 	//flags:Qt.FramelessWindowHint
 
 	Rectangle{
+
 		width:628
 		height:70
 		color:"white"
 		x:20
 		y:20
 
-		Text{
-			text:"Hello World"
-		}
-
-		Image {
+	Image {
          source: "strada.png"
     }
+	Rectangle
+	{
+		width:20
+		height:20
+		color:"red"
+		x:0
+		y:35
+		id:prova
+
+		Connections
+		{
+			target: QmlBridge
+			onSendToQml: prova.x = data
+		}
 	}
+	}
+
+
 	Rectangle{
 		width:628
 		height:70
