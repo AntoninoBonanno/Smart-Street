@@ -12,7 +12,7 @@ int main(int argc, char* argv[])
     /*
     cout << "Inserisci targa: ";
     cin >> targa;
-    cout << "Inserisci speed_max: ";
+    cout << "Inserisci speed_max [km/h]: ";
     cin >> speed_max;*/
 
     Car macchina(speed_max, targa);
