@@ -93,7 +93,7 @@ void Car::runStreet(string host, string port, string accessToken) {
     cout << "host: " << host <<"port:" << port <<endl;
     cout << "accessToken:" << accessToken << endl;
     struct addrinfo* result = NULL,
-        * ptr = NULL,
+        * res = NULL,
         hints;
 
     WSADATA wsaData;
@@ -108,6 +108,7 @@ void Car::runStreet(string host, string port, string accessToken) {
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_protocol = IPPROTO_TCP;
+    
 
     // imposto host, port e hints 
     iResult = getaddrinfo(host.c_str(), port.c_str(), &hints, &result);
@@ -119,12 +120,12 @@ void Car::runStreet(string host, string port, string accessToken) {
     }
 
     SOCKET ConnectSocket = INVALID_SOCKET;
-    ptr = result;
+    res = result;
     // Crea una SOCKET per la connessione al server
-    ConnectSocket = socket(ptr->ai_family, ptr->ai_socktype,ptr->ai_protocol);
+    ConnectSocket = socket(res->ai_family, res->ai_socktype,res->ai_protocol);
    
     // connect al server.
-    iResult = connect(ConnectSocket, ptr->ai_addr, (int)ptr->ai_addrlen);
+    iResult = connect(ConnectSocket, res->ai_addr, (int)res->ai_addrlen);
     if (iResult == SOCKET_ERROR) {
         closesocket(ConnectSocket);
         ConnectSocket = INVALID_SOCKET;
@@ -135,7 +136,7 @@ void Car::runStreet(string host, string port, string accessToken) {
         freeaddrinfo(result);
         WSACleanup();
         exit(0);
-    }
+    }else cout << "Ho stabilito la connessione con " << host << ": " << port << endl;
 
     // Invio un buffer con access_token e targa per richiedere l'accesso
     string sendbuf = "{\"access_token\":\"" + accessToken + "\",\"targa\":\"" + code + "\"}";
@@ -206,12 +207,12 @@ void Car::runStreet(string host, string port, string accessToken) {
         closesocket(ConnectSocket);
         WSACleanup();
         exit(0);
-    }
+    }else cout << "Ho chiuso la connessione con " << host<<": "<< port << endl;
     closesocket(ConnectSocket);
     WSACleanup();
-
+    
     // richiamo la funzione, per percorrere la nuova strada. 
-    if (response["action"]["action"].asString() == "next" && response["action"]["host"].size()!=0 && response["action"]["port"].size()!=0) 
+    if (response["action"]["action"].asString() == "next" && response["action"]["host"].asString() != "" && response["action"]["port"].asString() != "")
         runStreet(response["action"]["host"].asString(), response["action"]["port"].asString(), response["action"]["access_token"].asString()); //potrebbe andare in overflow
 }
 

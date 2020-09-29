@@ -55,7 +55,7 @@ class Database:
         config = json.load(json_data_file)
 
         print("Effettuo la connessione con il DB")
-        self.db = mysql.connect(**config["mysql"])
+        self.db = mysql.connect(host= 'localhost',user= 'root',password= '',database= 'street_smart')
 
     def close(self):
         print("Chiudo la connessione con il DB")
