@@ -1,0 +1,9 @@
+/bin/*
+/pkg/*
+/src/github.com/*
+/src/golang.org/*
+
+/src/GUI/*
+!/src/GUI/main.go
+!/src/GUI/qml
+

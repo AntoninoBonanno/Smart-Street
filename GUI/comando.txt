@@ -22,3 +22,4 @@ all'interno di GUI inserire il codice main.go e dentro la cartella qml inserire 
 per deployare andare dentro src e lanciare il seguente: 
 	qtdeploy build desktop GUI
 
+go get -u github.com/go-sql-driver/mysql

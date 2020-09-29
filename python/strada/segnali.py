@@ -40,7 +40,7 @@ class Stop(Segnale):
 
     def __init__(self):
         super().__init__()
-        self.delta = 50  # metri
+        self.delta = 100  # metri
         self.name = "stop"
 
     def getAction(self):
@@ -52,7 +52,7 @@ class SpeedLimit(Segnale):
     def __init__(self, max_speed_road, force=False):
         super().__init__()
 
-        self.delta = 20  # metri
+        self.delta = 50  # metri
         self.name = "speed_limit"
         self.new_speed = randint(
             30, (max_speed_road)) if force == False else max_speed_road
@@ -79,7 +79,7 @@ class Semaforo(Thread, Segnale):
         '''
         con multi-ereditarità super non funziona, quindi bisogna utilizzare il riferimento diretto al costruttore delle classi padre
         '''
-        self.delta = 30  # metri
+        self.delta = 80  # metri
         self.status = "red"
         self.durata = durata
         self.name = "semaphore"
