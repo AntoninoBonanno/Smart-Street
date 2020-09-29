@@ -21,21 +21,7 @@ ApplicationWindow{
 	Image {
          source: "strada.png"
     }
-	Rectangle
-	{
-		width:20
-		height:20
-		color:"red"
-		x:0
-		y:35
-		id:prova
-
-		Connections
-		{
-			target: QmlBridge
-			onSendToQml: prova.x = data
-		}
-	}
+	
 	}
 
 
@@ -46,9 +32,6 @@ ApplicationWindow{
 		x:20
 		y:140
 
-		Text{
-			text:"Hello World"
-		}
 
 		Image {
          source: "strada.png"
@@ -61,16 +44,95 @@ ApplicationWindow{
 		height:70
 		color:"white"
 		x:20
-		y:270
-
-		Text{
-			text:"Hello World"
-		}
+		y:260
 
 		Image {
          source: "strada.png"
     }
 
+	}
+
+	Rectangle{
+		width:628
+		height:70
+		color:"white"
+		x:20
+		y:380
+
+
+
+		Image {
+         source: "strada.png"
+    }
+
+	}
+
+		Rectangle{
+		width:628
+		height:70
+		color:"white"
+		x:20
+		y:500
+
+
+
+		Image {
+         source: "strada.png"
+    }
+
+	}
+
+	
+		Rectangle{
+		width:628
+		height:70
+		color:"white"
+		x:20
+		y:620
+
+
+
+		Image {
+         source: "strada.png"
+    }
+
+	}
+	
+		Rectangle{
+		width:628
+		height:70
+		color:"white"
+		x:20
+		y:740
+
+
+
+		Image {
+         source: "strada.png"
+    }
+
+	}
+
+	Rectangle
+	{
+		width:20
+		height:20
+		color:"red"
+		x:20
+		y:20
+		id:prova
+
+		Connections
+		{
+			target: QmlBridge
+			onSendToQml: 
+			{
+				prova.x = position
+				prova.y= street_id
+			}
+			//prova.y=street_id
+			//prova.y=data.street_id
+		}
 	}
 }
 

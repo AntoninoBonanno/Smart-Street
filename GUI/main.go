@@ -44,7 +44,7 @@ type Client struct {
 type QmlBridge struct {
 	core.QObject
 
-	_ func(data int)        `signal:"sendToQml"`
+	_ func(position,street_id int)        `signal:"sendToQml"`
 	_ func(data string) string `slot:"sendToGo"`
 }
 
@@ -138,7 +138,7 @@ func main(){
 	view.SetSource(core.NewQUrl3("qrc:/qml/application.qml", 0))
 
 	go func() {
-		for t := range time.NewTicker(time.Second * 3).C {
+		for t := range time.NewTicker(time.Second*5 ).C {
             _= t
             result, err := db.Query("SELECT car_id,route_list,current_index,current_street_position FROM `routes` WHERE finished_at IS NULL")
             if err != nil{
@@ -166,18 +166,43 @@ func main(){
                 var c Client
                 c.CAR_ID=my_route.CAR_ID
                 var route_converted[]int
+                var id_street int
                 json.Unmarshal([]byte(my_route.ROUTE_LIST), &route_converted)
-                id_street:=route_converted[my_route.CURRENT_INDEX]
+                id_street=route_converted[my_route.CURRENT_INDEX]
+                c.POSITION=1
                 st_len:=1
                 for i := range street_array{
-                if int(street_array[i].STREET_ID) == id_street{
+                if int(street_array[i].STREET_ID) == int(id_street){
                    st_len=street_array[i].LENGTH
+                   c.POSITION=int(628*my_route.CURRENT_STREET_POSITION)/int(st_len)
                 }
                 }
-                c.POSITION=int(628*my_route.CURRENT_STREET_POSITION)/int(st_len)
+                
+                //per cambiare strada basta sommare 120
              
-                c.STREET_ID=id_street
-                qmlBridge.SendToQml(c.POSITION)
+                switch id_street {
+                case 1:
+                    c.STREET_ID=20
+                case 2:
+                    c.STREET_ID=150
+                case 3:
+                    c.STREET_ID=270
+
+                case 4:
+                    c.STREET_ID=390
+                case 5:
+                    c.STREET_ID=510
+                case 6:
+                    c.STREET_ID=630
+                case 7:
+                    c.STREET_ID=750
+
+                default:
+                    c.STREET_ID=0
+                }
+
+             
+                qmlBridge.SendToQml(c.POSITION,c.STREET_ID)
                 
             }
             
@@ -188,7 +213,7 @@ func main(){
 		}
 	}()
 
-	//view.Show()
+	view.Show()
 
     
     }
