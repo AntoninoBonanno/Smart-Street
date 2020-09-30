@@ -7,7 +7,7 @@ Rectangle{
     color:"#3d3d3d"
 
     x:20
-    y:0
+    y:100
 
     Image {
         anchors.fill: parent

@@ -6,4 +6,5 @@
 /src/GUI/*
 !/src/GUI/main.go
 !/src/GUI/qml
+!/src/GUI/deploy
 
