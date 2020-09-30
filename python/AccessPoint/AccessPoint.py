@@ -112,11 +112,6 @@ def create_route():
     return jsonify(host=host, port=port, access_token=token.decode('UTF-8'), message=message), 200
 
 
-
-
-
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--host', type=str, default=None)
