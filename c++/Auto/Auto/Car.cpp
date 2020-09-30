@@ -163,7 +163,7 @@ void Car::runStreet(string host, string port, string accessToken) {
   
     //inizio scambio messaggi
     while(true) {
-        Sleep(50);
+        Sleep(150);
         iResult = recv(ConnectSocket, &rcvbuffer[0], rcvbuffer.size(), 0);
         if (iResult > 0){ 
             string rcv;
@@ -243,7 +243,7 @@ void Car::doAction(Json::Value action,int start,double position_server) {
         }
         else if (action["action"].asString() == "rallenta" && current_speed > 20) current_speed = current_speed - (rand() % 10 + 1);        
     }
-    if (action.size() == 0 || (action["action"].asString()=="accelera")) {                       
+    if (action["action"].asString() == "" || (action["action"].asString()=="accelera")) {
         if (current_speed> current_limit/2) current_speed = current_speed + 2;
         else current_speed = current_speed + (rand() % 10 + 1);
         if (current_speed > current_limit) current_speed = current_limit;

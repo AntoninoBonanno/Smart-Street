@@ -5,7 +5,7 @@ import time
 import json
 import socket
 import argparse
-from threading import Thread
+import threading
 from random import randrange
 from datetime import datetime
 
@@ -49,7 +49,8 @@ class Street:
 
         # connectedClient contiene tutti i client connessi, è un dizionario con targa e posizione
         self.__connectedClient = {}
-
+        self.__lock = threading.Lock()
+               
         self.__name = name
         self.__lenght = lenght  # metri
         self.__maxSpeed = maxSpeed  # limite massimo che si può raggiungere nella strada
@@ -152,7 +153,9 @@ class Street:
 
             # il token viene generato la prima volta, nel momento il cui il client è autenticato, nel db viene aggiornata la route, cioè associamo una certa route ad un client
             # andiamo a recuperare tutte le route relative al client che non sono state completate, cioè dove il client non è arrivato a destinazione, esisterà una sola route di questo tipo
+            self.__lock.acquire()
             DB_Route = self.__db.getRoutes(car_id=car_id, finished=False)
+            self.__lock.release()
 
             if not DB_Route or DB_Route[0].car_ip != car_ip:
                 raise Exception(
@@ -184,7 +187,10 @@ class Street:
                 "Non sei autorizzato, Token non valido per questa strada")
 
         # recupero la route e la verifico
+        self.__lock.acquire()
         DB_Route = self.__db.getRoutes(route_id_token)
+        self.__lock.release()
+
         if not DB_Route or DB_Route[0].car_id != car_id:
             raise Exception(
                 "Non sei autorizzato, il token inviato non corrisponde alla tua targa")
@@ -196,8 +202,10 @@ class Street:
         len_route_list = len(DB_Route.route_list)
         if current_index >= 0 and current_index < len_route_list and DB_Route.route_list[current_index] == self.__id and DB_Route.current_street_position < self.__lenght:
             #  è già autenticato quindi aggiorniamo la route
+            self.__lock.acquire()
             self.__db.upsertRoute(
                 car_id, car_ip, connected=True, id=DB_Route.id)
+            self.__lock.release()
             return DB_Route
 
         # se non era già autenticato, controllo che la strada successiva della route è quella corrente
@@ -206,8 +214,10 @@ class Street:
                 "Non sei autorizzato, Token non valido per questa strada")
 
         # ho autenticato l'utente e aggiorno la route
+        self.__lock.acquire()
         self.__db.upsertRoute(car_id, car_ip, current_index=(
             current_index + 1), current_street_position=0, connected=True, id=DB_Route.id)
+        self.__lock.release()
 
         return DB_Route
 
@@ -237,8 +247,10 @@ class Street:
             client_position = old_position
         else:
             # se il client ci passa una posizione maggiore di quella presente nel db allora dobbiamo aggiornarla nel db
+            self.__lock.acquire()
             self.__db.upsertRoute(
                 car_id, car_ip, current_street_position=client_position, id=route.id)
+            self.__lock.release()
 
         for clients in self.__connectedClient:
             if clients == car_id:
@@ -269,13 +281,17 @@ class Street:
             # assumiamo che ogni strada finisce con uno stop, se vale la condizione posta sopra la strada è finita
             if route.current_index >= len(route.route_list) - 1:
                 # se non ci sono più strade successive, il percorso è finito
+                self.__lock.acquire()
                 self.__db.upsertRoute(
                     car_id, car_ip, finished_at=datetime.now(), id=route.id)
+                self.__lock.release()
                 return {"action": "end"}, client_position, f"Congratulazioni sei arrivato a destinazione"
 
             # individuiamo la prossima strada da percorrere
+            self.__lock.acquire()
             nextStreet = self.__db.getStreets(
                 route.route_list[route.current_index + 1])[0]
+            self.__lock.release()                
             # individuiamo l'ip e la porta della prossima strada
             host, port = nextStreet.getIpAddress()
 
@@ -365,13 +381,17 @@ class Street:
         if 'car_id' in locals() and car_id in self.__connectedClient:
             # con del eliminiamo il car_id che si è disconnesso
             del self.__connectedClient[car_id]
-            if 'route' in locals():  # aggiorno il db
+            if 'route' in locals():  # aggiorno il db   
+                self.__lock.acquire()             
                 self.__db.upsertRoute(
                     car_id, car_ip, connected=False, id=route.id)
+                self.__lock.release()
 
-        client.shutdown(socket.SHUT_RDWR)
-        client.close()  # scollego il client
-
+        try:
+            client.shutdown(socket.SHUT_RDWR)
+            client.close()  # scollego il client
+        except socket.error:
+            print("Client disconnesso")        
 
 def arg_tuple_parse(arg_list):
     """
@@ -452,6 +472,6 @@ if __name__ == '__main__':
         print(
             f'Connesso con la macchina: {client_address[0]}:{client_address[1]}')
 
-        t = Thread(target=street.manageCar, args=(conn, client_address))
+        t = threading.Thread(target=street.manageCar, args=(conn, client_address))
         t.daemon = True
         t.start()
