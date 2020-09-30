@@ -21,7 +21,8 @@ from DatabaseHelper import Database, DB_Route
 class Street:
 
     def __init__(self, name: str, maxSpeed: int, lenght: int, signals_quantity: list, ipAddress: str = None, port: int = 0):
-        """Funzione di inizializzazione dell'oggetto strada
+        """
+        Funzione di inizializzazione dell'oggetto strada
 
         Args:
             name (str): nome della strada
@@ -41,7 +42,7 @@ class Street:
             name=name, ip_address=f"{ipAddress}:{port}", length=lenght)
 
         if DB_Street is None:
-            raise Exception("Street save on DB error")
+            raise Exception("Errore salvataggio strada sul DB")
 
         # l'id della strada viene generato dal db
         self.__id = DB_Street.id
@@ -57,7 +58,8 @@ class Street:
         self.__signals = self.__createSignals(signals_quantity, 20, 5)
 
     def __createSignals(self, signals_quantity: list, step: int, time_semaphore: int) -> list:
-        """Questa funzione permette di creare i segnali nella strada
+        """
+        Questa funzione permette di creare i segnali nella strada
 
         Args:
             signals_quantity (list): lista di tuple contente nome del segnale e quantità
@@ -102,7 +104,8 @@ class Street:
         return street_signal
 
     def __findSignal(self, client_position: float) -> tuple:
-        """Questa funzione, data in input la posizione del client, controlla se nelle vicinanze esistono segnali ed eventualmente restituisce nome e posizione del segnale
+        """
+        Questa funzione, data in input la posizione del client, controlla se nelle vicinanze esistono segnali ed eventualmente restituisce nome e posizione del segnale
 
         Args:
             client_position (float): posizione del client nella strada
@@ -125,7 +128,8 @@ class Street:
         return None, None
 
     def __checkAuth(self, car_ip: str, car_id: str = None, token_client: str = None) -> DB_Route:
-        """Questa funzione serve a verificare che il client sia già autenticato, eventualmente viene autenticato
+        """
+        Questa funzione serve a verificare che il client sia già autenticato, eventualmente viene autenticato
 
         Args:
             car_ip (str): indirizzo ip del client
@@ -208,7 +212,8 @@ class Street:
         return DB_Route
 
     def __comeBackAction(self, car_id: str, car_ip: str, client_speed: int, route: DB_Route, client_position: float = None) -> tuple:
-        """Questa funzione si occupa di inviare i comandi al client
+        """
+        Questa funzione si occupa di inviare i comandi al client
 
         Args:
             car_id (str): targa del client
@@ -364,6 +369,7 @@ class Street:
                 self.__db.upsertRoute(
                     car_id, car_ip, connected=False, id=route.id)
 
+        client.shutdown(socket.SHUT_RDWR)
         client.close()  # scollego il client
 
 

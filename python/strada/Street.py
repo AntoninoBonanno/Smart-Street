@@ -66,7 +66,7 @@ class Street:
             name=name, ip_address=f"{self.__ipAddress}:{self.__port}", length=lenght)
 
         if DB_Street is None:
-            raise Exception("Street save on DB error")
+            raise Exception("Errore salvataggio strada sul DB")
 
         # l'id della strada viene generato dal db
         self.__id = DB_Street.id

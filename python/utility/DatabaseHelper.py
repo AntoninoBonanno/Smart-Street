@@ -54,6 +54,7 @@ class Database:
         json_data_file = open(config_path, 'r')
         self.__config = json.load(json_data_file)
         self.db = None
+        self.cursor = None
 
     def __connect(self):
         """
@@ -64,13 +65,14 @@ class Database:
         """
         if (self.db is None or self.db.is_connected() == False):
             self.db = mysql.connect(**self.__config["mysql"])
-        return self.db.cursor()
+            self.cursor = self.db.cursor()
 
     def __close(self):
         """
         Chiude la connessione con il database
         """
         if (self.db is not None and self.db.is_connected() == True):
+            self.cursor.close()
             self.db.close()
 
     def getStreets(self, id: int = None, ipAddress: str = None, available: bool = None) -> [DB_Street]:
@@ -85,7 +87,8 @@ class Database:
             [DB_Street]: lista delle strade recuperate
         """
 
-        cursor = self.__connect()
+        self.__connect()
+
         query = ""
         values = None
         if id is not None:
@@ -105,10 +108,10 @@ class Database:
                       "" else " WHERE `available` = %s")
             values = (available,) if values is None else (*values, available)
 
-        cursor.execute("SELECT * FROM `streets`" + query, values)
+        self.cursor.execute("SELECT * FROM `streets`" + query, values)
 
         streets = []
-        for db_data in cursor.fetchall():
+        for db_data in self.cursor.fetchall():
             streets.append(DB_Street(db_data))
 
         self.__close()
@@ -135,7 +138,8 @@ class Database:
             if streets:
                 id = streets[0].id
 
-        cursor = self.__connect()
+        self.__connect()
+
         if id is not None:
             query = "UPDATE `streets` SET `name` = %s, `ip_address` = %s, `length` = %s, `available` = %s, `updated_at` = %s WHERE (`id` = %s);"
             values = (name, ip_address, length, available, datetime.now(), id)
@@ -143,14 +147,15 @@ class Database:
             query = "INSERT INTO `streets` (`name`, `ip_address`, `length`, `available`) VALUES (%s, %s, %s, %s);"
             values = (name, ip_address, length, available)
 
-        cursor.execute(query, values)
+        self.cursor.execute(query, values)
         self.db.commit()
+
+        last_id = id or self.cursor.lastrowid
         self.__close()
 
-        streets = self.getStreets(id or cursor.lastrowid)
+        streets = self.getStreets(last_id)
         if not streets:
             return None
-
         return streets[0]
 
     def getRoutes(self, id: int = None, car_id: str = None, finished: bool = None, connected: bool = None) -> [DB_Route]:
@@ -167,7 +172,8 @@ class Database:
             [DB_Route]: lista dei percorsi recuperati
         """
 
-        cursor = self.__connect()
+        self.__connect()
+
         query = ""
         values = None
         if id is not None:
@@ -195,10 +201,10 @@ class Database:
                 query += " AND `connected` = %s"
                 values = (*values, connected)
 
-        cursor.execute("SELECT * FROM `routes`" + query, values)
+        self.cursor.execute("SELECT * FROM `routes`" + query, values)
 
         routes = []
-        for db_data in cursor.fetchall():
+        for db_data in self.cursor.fetchall():
             routes.append(DB_Route(db_data))
 
         self.__close()
@@ -225,7 +231,7 @@ class Database:
             DB_Route: Il percorso appena creato
         """
 
-        cursor = self.__connect()
+        self.__connect()
         if id is not None:
             values = (car_ip,)
             query = ""
@@ -256,11 +262,13 @@ class Database:
             values = (car_id, car_ip, json.dumps(
                 route_list), route_list[-1])
 
-        cursor.execute(query, values)
+        self.cursor.execute(query, values)
         self.db.commit()
+
+        last_id = id or self.cursor.lastrowid
         self.__close()
 
-        routes = self.getRoutes(id or cursor.lastrowid)
+        routes = self.getRoutes(last_id)
         if not routes:
             return None
 
