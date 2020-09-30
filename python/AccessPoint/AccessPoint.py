@@ -1,11 +1,12 @@
 import os
 import sys
-sys.path.append(os.path.dirname(os.path.dirname(
-    os.path.abspath(__file__))) + "/utility")
 
 import argparse
 from random import randint
 from flask import Flask, jsonify, request, abort, make_response
+
+sys.path.append(os.path.dirname(os.path.dirname(
+    os.path.abspath(__file__))) + "/utility")
 
 import Auth
 from DatabaseHelper import Database

@@ -5,7 +5,7 @@ import "helper.js" as Helper
 
 //Finestra principale
 ApplicationWindow {
-    title: "Protetto APL - Streets"
+    title: "SMART STREET"
 	visible:true
 	width: 1020
 	height: 500
@@ -20,7 +20,7 @@ ApplicationWindow {
 
         Text {
             anchors.fill: parent
-            text: "Protetto APL - Streets"
+            text: "SMART STREET"
             font.pointSize: 24
             color: "white"
             horizontalAlignment: Text.AlignHCenter

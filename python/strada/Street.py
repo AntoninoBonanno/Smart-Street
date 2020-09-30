@@ -14,7 +14,6 @@ sys.path.append(os.path.dirname(os.path.dirname(
 
 import Auth  # contiene funzioni per gestire l'autenticazione
 import Segnali  # contiene le classi con i segnali
-
 # contiene funzioni per gestire il db
 from DatabaseHelper import Database, DB_Route
 
