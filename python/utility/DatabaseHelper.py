@@ -145,12 +145,12 @@ class Database:
 
         cursor.execute(query, values)
         self.db.commit()
-
         self.__close()
 
         streets = self.getStreets(id or cursor.lastrowid)
         if not streets:
             return None
+
         return streets[0]
 
     def getRoutes(self, id: int = None, car_id: str = None, finished: bool = None, connected: bool = None) -> [DB_Route]:
@@ -258,7 +258,6 @@ class Database:
 
         cursor.execute(query, values)
         self.db.commit()
-
         self.__close()
 
         routes = self.getRoutes(id or cursor.lastrowid)
