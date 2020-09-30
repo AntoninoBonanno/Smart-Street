@@ -1,8 +1,7 @@
 ﻿#include <iostream>
-#include "restclient-cpp/restclient.h"
-#include "restclient-cpp/connection.h"
 #include "json/json.h"
 #include "Car.h"
+
 using namespace std;
 
 int main(int argc, char* argv[])
