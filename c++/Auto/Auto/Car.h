@@ -10,9 +10,9 @@ class Car
         RestClient::Connection* conn;
         int current_speed;
         double position;
-        void runStreet(string host, string port, string accessToken); //connessione con la strada
-        tuple<string,string,string> richiestaAccess(string destinazione);
-        void sendInfo(); //comunico la mia posizone e current_speed e la targa alla strada
+
+        void runStreet(string host, string port, string accessToken); 
+        tuple<string,string,string> requestAccess(string destinazione);        
         void doAction(Json::Value action, int start, double position_server);
         Json::Value jsonParse(string r);
     public:
@@ -26,7 +26,7 @@ class Car
             this->code = code;
         }
         
-        Json::Value getDestinations(string address);//connessione PA,chiedo le destinazioni 
+        Json::Value getDestinations(string address);
         void goToDestination(string destination);
   
 };
