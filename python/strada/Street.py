@@ -5,7 +5,7 @@ import time
 import json
 import socket
 import argparse
-from threading import Thread
+import threading
 from random import randrange
 from datetime import datetime
 
@@ -14,30 +14,22 @@ sys.path.append(os.path.dirname(os.path.dirname(
 
 import Auth  # contiene funzioni per gestire l'autenticazione
 import Segnali  # contiene le classi con i segnali
+
 # contiene funzioni per gestire il db
 from DatabaseHelper import Database, DB_Route
-
-'''
-def threaded(fn):
-    # questa funzione ci serve per far si che la funzione managecar sia un thread
-    def wrapper(*args, **kwargs):
-        thread = Thread(target=fn, args=args, kwargs=kwargs)
-        thread.start()
-        return thread
-    return wrapper
-'''
 
 
 class Street:
 
     def __init__(self, name: str, maxSpeed: int, lenght: int, signals_quantity: list, ipAddress: str = None, port: int = 0):
-        """Funzione di inizializzazione dell'oggetto strada 
+        """
+        Funzione di inizializzazione dell'oggetto strada
 
         Args:
             name (str): nome della strada
             maxSpeed (int): massima velocità raggiungibile nella strada
-            lenght (int): lunghezza della strada espressa in metri 
-            signals_quantity (list): lista di tuple contente nome del segnale e quantità 
+            lenght (int): lunghezza della strada espressa in metri
+            signals_quantity (list): lista di tuple contente nome del segnale e quantità
             ipAddress (str, optional): indirizzo ip della strada, default None
             port (int, optional): porta. Defaults to 0.
 
@@ -46,24 +38,9 @@ class Street:
         """
         self.__db = Database()  # istauro la connessione con il db
 
-        if ipAddress is None:
-            # se l'indirizzo ip è nullo l'indirizzo ip della strada diventa quello del localhost
-            hostname = socket.gethostname()
-            ipAddress = socket.gethostbyname(hostname)
-
-        # inizializzo la socket.
-        # Con Socket AF_INET indichiamo di lavorare con indirizzi ipv4, con SOCK stream indichiamo il tipo di socket ovvero TCP
-        self.__s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        # bind assegna un ip e un numero di porta alla socket
-        self.__s.bind((ipAddress, port))
-        # listen ascolta le connessioni in entrata
-        self.__s.listen(5)
-
-        self.__ipAddress, self.__port = self.__s.getsockname()
-
         # aggiorno il database
         DB_Street = self.__db.upsertStreet(
-            name=name, ip_address=f"{self.__ipAddress}:{self.__port}", length=lenght)
+            name=name, ip_address=f"{ipAddress}:{port}", length=lenght)
 
         if DB_Street is None:
             raise Exception("Errore salvataggio strada sul DB")
@@ -73,17 +50,18 @@ class Street:
 
         # connectedClient contiene tutti i client connessi, è un dizionario con targa e posizione
         self.__connectedClient = {}
+        self.__lock = threading.Lock()
 
         self.__name = name
         self.__lenght = lenght  # metri
         self.__maxSpeed = maxSpeed  # limite massimo che si può raggiungere nella strada
 
         # creo i segnali nella strada
-        self.__signals = self.__createSignals(
-            signals_quantity, 20, 5)
+        self.__signals = self.__createSignals(signals_quantity, 20, 5)
 
     def __createSignals(self, signals_quantity: list, step: int, time_semaphore: int) -> list:
-        """Questa funzione permette di creare i segnali nella strada
+        """
+        Questa funzione permette di creare i segnali nella strada
 
         Args:
             signals_quantity (list): lista di tuple contente nome del segnale e quantità
@@ -128,7 +106,8 @@ class Street:
         return street_signal
 
     def __findSignal(self, client_position: float) -> tuple:
-        """Questa funzione, data in input la posizione del client, controlla se nelle vicinanze esistono segnali ed eventualmente restituisce nome e posizione del segnale
+        """
+        Questa funzione, data in input la posizione del client, controlla se nelle vicinanze esistono segnali ed eventualmente restituisce nome e posizione del segnale
 
         Args:
             client_position (float): posizione del client nella strada
@@ -151,7 +130,8 @@ class Street:
         return None, None
 
     def __checkAuth(self, car_ip: str, car_id: str = None, token_client: str = None) -> DB_Route:
-        """Questa funzione serve a verificare che il client sia già autenticato, eventualmente viene autenticato
+        """
+        Questa funzione serve a verificare che il client sia già autenticato, eventualmente viene autenticato
 
         Args:
             car_ip (str): indirizzo ip del client
@@ -174,7 +154,9 @@ class Street:
 
             # il token viene generato la prima volta, nel momento il cui il client è autenticato, nel db viene aggiornata la route, cioè associamo una certa route ad un client
             # andiamo a recuperare tutte le route relative al client che non sono state completate, cioè dove il client non è arrivato a destinazione, esisterà una sola route di questo tipo
+            self.__lock.acquire()
             DB_Route = self.__db.getRoutes(car_id=car_id, finished=False)
+            self.__lock.release()
 
             if not DB_Route or DB_Route[0].car_ip != car_ip:
                 raise Exception(
@@ -206,7 +188,10 @@ class Street:
                 "Non sei autorizzato, Token non valido per questa strada")
 
         # recupero la route e la verifico
+        self.__lock.acquire()
         DB_Route = self.__db.getRoutes(route_id_token)
+        self.__lock.release()
+
         if not DB_Route or DB_Route[0].car_id != car_id:
             raise Exception(
                 "Non sei autorizzato, il token inviato non corrisponde alla tua targa")
@@ -218,8 +203,10 @@ class Street:
         len_route_list = len(DB_Route.route_list)
         if current_index >= 0 and current_index < len_route_list and DB_Route.route_list[current_index] == self.__id and DB_Route.current_street_position < self.__lenght:
             #  è già autenticato quindi aggiorniamo la route
+            self.__lock.acquire()
             self.__db.upsertRoute(
                 car_id, car_ip, connected=True, id=DB_Route.id)
+            self.__lock.release()
             return DB_Route
 
         # se non era già autenticato, controllo che la strada successiva della route è quella corrente
@@ -228,13 +215,16 @@ class Street:
                 "Non sei autorizzato, Token non valido per questa strada")
 
         # ho autenticato l'utente e aggiorno la route
+        self.__lock.acquire()
         self.__db.upsertRoute(car_id, car_ip, current_index=(
             current_index + 1), current_street_position=0, connected=True, id=DB_Route.id)
+        self.__lock.release()
 
         return DB_Route
 
     def __comeBackAction(self, car_id: str, car_ip: str, client_speed: int, route: DB_Route, client_position: float = None) -> tuple:
-        """Questa funzione si occupa di inviare i comandi al client
+        """
+        Questa funzione si occupa di inviare i comandi al client
 
         Args:
             car_id (str): targa del client
@@ -258,8 +248,10 @@ class Street:
             client_position = old_position
         else:
             # se il client ci passa una posizione maggiore di quella presente nel db allora dobbiamo aggiornarla nel db
+            self.__lock.acquire()
             self.__db.upsertRoute(
                 car_id, car_ip, current_street_position=client_position, id=route.id)
+            self.__lock.release()
 
         for clients in self.__connectedClient:
             if clients == car_id:
@@ -290,13 +282,17 @@ class Street:
             # assumiamo che ogni strada finisce con uno stop, se vale la condizione posta sopra la strada è finita
             if route.current_index >= len(route.route_list) - 1:
                 # se non ci sono più strade successive, il percorso è finito
+                self.__lock.acquire()
                 self.__db.upsertRoute(
                     car_id, car_ip, finished_at=datetime.now(), id=route.id)
+                self.__lock.release()
                 return {"action": "end"}, client_position, f"Congratulazioni sei arrivato a destinazione"
 
             # individuiamo la prossima strada da percorrere
+            self.__lock.acquire()
             nextStreet = self.__db.getStreets(
                 route.route_list[route.current_index + 1])[0]
+            self.__lock.release()
             # individuiamo l'ip e la porta della prossima strada
             host, port = nextStreet.getIpAddress()
 
@@ -326,14 +322,17 @@ class Street:
         limit = action['speed_limit'] if name_signal == "speed_limit" else 'prescrizione precedente'
         return action, client_position, (f"Fra {distance:.2f}m incontri il segnale {name_signal}, l'azione che devi eseguire e' {action['action']}. Limite: {limit}")
 
-    def __manageCar(self, client, client_address):
-        """Funzione per gestire il client 
+    def manageCar(self, client, client_address):
+        """
+        Funzione per gestire il client
 
         Args:
             client: connessione socket
             client_address: ip e porta del client
         """
         car_ip = f"{client_address[0]}:{client_address[1]}"
+        print(
+            f'Macchine attualmente connesse: {len(self.__connectedClient) + 1 }')
 
         try:
             while True:
@@ -384,38 +383,21 @@ class Street:
             # con del eliminiamo il car_id che si è disconnesso
             del self.__connectedClient[car_id]
             if 'route' in locals():  # aggiorno il db
+                self.__lock.acquire()
                 self.__db.upsertRoute(
                     car_id, car_ip, connected=False, id=route.id)
-
-        client.close()  # scollego il client
-
-    def run(self):
-        """
-        Funzione per mettere in run il server strada
-        """
+                self.__lock.release()
 
         try:
-            print(f"La strada è in ascolto {self.__ipAddress}:{self.__port}")
-            while True:
-                client, client_address = self.__s.accept()
-                print(
-                    f'Connesso con la macchina: {client_address[0]}:{client_address[1]}')
-                print(
-                    f'Macchine attualmente connesse: {len(self.__connectedClient) + 1 }')
-
-                t1 = Thread(target=self.__manageCar,
-                            args=(client, client_address))
-                t1.start()
-        except KeyboardInterrupt:
-            print('Interrupted')
-
-        self.__s.close()
-        sys.exit(0)
+            client.shutdown(socket.SHUT_RDWR)
+            client.close()  # scollego il client
+        except socket.error:
+            print("Client disconnesso")
 
 
 def arg_tuple_parse(arg_list):
     """
-    Funzione per fare il Parse di tuple per argsparse 
+    Funzione per fare il Parse di tuple per argsparse
 
     Args:
         arg_list ([type]): [description]
@@ -465,14 +447,34 @@ if __name__ == '__main__':
     min_street_lenght = 100
     min_speed = 50
 
-    try:
-        if((args.st_lenght > min_street_lenght) or (args.speed < min_speed)):
-            street = Street(args.name, args.speed, args.st_lenght,
-                            arg_tuple_parse(args.sig_type), args.ip_address, args.port)
-
-            street.run()
-        else:
-            print("Dati inseriti non sono corretti")
-    except KeyboardInterrupt:
-        print('Interrupted')
+    if((args.st_lenght < min_street_lenght) or (args.speed < min_speed)):
+        print("Dati inseriti non sono corretti")
         sys.exit(0)
+
+    print("Inizializzazione della strada...")
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+    ipAddress = args.ip_address
+    if ipAddress is None:
+        # se l'indirizzo ip è nullo l'indirizzo ip della strada diventa quello del localhost
+        hostname = socket.gethostname()
+        ipAddress = socket.gethostbyname(hostname)
+
+    s.bind((ipAddress, args.port))
+    s.listen(5)
+
+    ipAddress, port = s.getsockname()
+    street = Street(args.name, args.speed, args.st_lenght,
+                    arg_tuple_parse(args.sig_type), ipAddress, port)
+
+    print(f"La strada è in ascolto {ipAddress}:{port}")
+    while True:
+        (conn, client_address) = s.accept()
+        print(
+            f'Connesso con la macchina: {client_address[0]}:{client_address[1]}')
+
+        t = threading.Thread(target=street.manageCar,
+                             args=(conn, client_address))
+        t.daemon = True
+        t.start()
