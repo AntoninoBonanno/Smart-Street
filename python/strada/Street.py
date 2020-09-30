@@ -362,7 +362,7 @@ class Street:
             }).encode())
 
         # locals() restituisce tutte le variabili locali che sono state istanziate
-        if 'car_id' in locals() and 'car_id' in self.__connectedClient:
+        if 'car_id' in locals() and car_id in self.__connectedClient:
             # con del eliminiamo il car_id che si è disconnesso
             del self.__connectedClient[car_id]
             if 'DB_Route' in locals():
