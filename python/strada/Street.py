@@ -15,7 +15,7 @@ from datetime import datetime
 sys.path.append(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__))) + "/utility")
 
-
+'''
 def threaded(fn):
     # questa funzione ci serve per far si che la funzione managecar sia un thread
     def wrapper(*args, **kwargs):
@@ -23,6 +23,7 @@ def threaded(fn):
         thread.start()
         return thread
     return wrapper
+'''
 
 
 class Street:
@@ -309,7 +310,6 @@ class Street:
         limit = action['speed_limit'] if name_signal == "speed_limit" else 'prescrizione precedente'
         return action, client_position, (f"Fra {distance:.2f}m incontri il segnale {name_signal}, l'azione che devi eseguire e' {action['action']}. Limite: {limit}")
 
-    @threaded
     def __manageCar(self, client, client_address):
         """funzione per gestire il client 
         Args:
@@ -382,7 +382,10 @@ class Street:
                 f'Connesso con la macchina: {client_address[0]}:{client_address[1]}')
             print(
                 f'Macchine attualmente connesse: {len(self.__connectedClient) + 1 }')
-            handle = self.__manageCar(client, client_address)
+
+            t1 = Thread(target=self.__manageCar,
+                        args=(client, client_address))
+            t1.start()
 
         self.__s.close()
 
