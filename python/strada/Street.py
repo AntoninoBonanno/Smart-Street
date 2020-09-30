@@ -437,11 +437,16 @@ if __name__ == '__main__':
     parser.add_argument('-n', '--name', type=str, default="road1")
     parser.add_argument('-st', '--sig-type', nargs='+', type=str)
     args = parser.parse_args()
+    try:
+        while True:
+            if((args.st_lenght > 100) or (args.speed < 50)):
+                street = Street(args.name, args.speed, args.st_lenght,
+                                arg_tuple_parse(args.sig_type), args.ip_address, args.port)
 
-    if((args.st_lenght > 100) or (args.speed < 50)):
-        street = Street(args.name, args.speed, args.st_lenght,
-                        arg_tuple_parse(args.sig_type), args.ip_address, args.port)
-
-        street.run()
-    else:
-        print("Dati inseriti non sono corretti")
+                street.run()
+            else:
+                print("Dati inseriti non sono corretti")
+            sleep(1)
+    except KeyboardInterrupt:
+        print('Interrupted')
+        sys.exit(0)
