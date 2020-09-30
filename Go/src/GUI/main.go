@@ -34,8 +34,9 @@ type QmlBridge struct {
 }
 
 func main() {
-	// Creo una nuova applicazione QT
+	// settaggio attributi dell'applicazione Qt
 	core.QCoreApplication_SetAttribute(core.Qt__AA_EnableHighDpiScaling, true)
+	//creazione finestra 
 	gui.NewQGuiApplication(len(os.Args), os.Args)
 
 	// Aggiungo una view vuota
