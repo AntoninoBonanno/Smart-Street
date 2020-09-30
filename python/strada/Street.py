@@ -446,7 +446,7 @@ if __name__ == '__main__':
                 street.run()
             else:
                 print("Dati inseriti non sono corretti")
-            sleep(1)
+            time.sleep(1)
     except KeyboardInterrupt:
         print('Interrupted')
         sys.exit(0)
