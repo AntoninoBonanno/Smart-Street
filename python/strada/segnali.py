@@ -17,7 +17,14 @@ Per ogni tipologia di segnale viene definita l'opportuna azione, il nome ecc.
 
 
 class Segnale:
+
     def __init__(self):
+        """
+        - name: nome del segnale
+        - id_signal: id univoco 
+        - action: azione associata al segnale 
+        - delta: quanti metri prima avvisare il client della presenza del segnale)
+        """
         self.id_signal = base64.b64encode(os.urandom(6)).decode('ascii')
         self.delta = 2
         self.name = "Generic"
@@ -39,6 +46,9 @@ class Segnale:
 class Stop(Segnale):
 
     def __init__(self):
+        """
+        Stop eredita attributi e metodi da Segnale
+        """
         super().__init__()
         self.delta = 100  # metri
         self.name = "stop"
@@ -50,6 +60,14 @@ class Stop(Segnale):
 class SpeedLimit(Segnale):
 
     def __init__(self, max_speed_road, force=False):
+        """SpeedLimit eredita attributi e metodi da Segnale
+
+        Args:
+            max_speed_road ([type]): massima velocità raggiungibile
+            force (bool, optional): forziamo il segnale ad assumere la massima velocità raggiungibile nella strada
+        """        """
+        
+        """
         super().__init__()
 
         self.delta = 50  # metri
@@ -61,19 +79,20 @@ class SpeedLimit(Segnale):
         return self.new_speed
 
     def getAction(self, client_speed):
+        # override di getAction per definire le azioni di speed_limit
         if (client_speed <= self.new_speed):
             return self.action[0]
         return self.action[2]
 
 
-'''
-Il semaforo è gestito con un thread
-'''
-
-
 class Semaforo(Thread, Segnale):
 
     def __init__(self, durata):
+        """Semaforo eredita attributi e metodi dalla classe Segnale, ma è anche figlia di Thread. Gestiamo il semaforo come un thread
+
+        Args:
+            durata ([type]): durata in secondi del semaforo
+        """
         Thread.__init__(self)
         Segnale.__init__(self)
         '''
@@ -81,10 +100,11 @@ class Semaforo(Thread, Segnale):
         '''
         self.delta = 80  # metri
         self.status = "red"
-        self.durata = durata
+        self.durata = durata  # in secondi
         self.name = "semaphore"
 
     def getAction(self):
+        # override di getAction per definire le azioni associate al semaforo
         if self.status == "green":
             return self.action[0]
         if self.status == "red":
