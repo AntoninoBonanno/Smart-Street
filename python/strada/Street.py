@@ -438,9 +438,12 @@ if __name__ == '__main__':
     parser.add_argument('-n', '--name', type=str, default="road1")
     parser.add_argument('-st', '--sig-type', nargs='+', type=str)
     args = parser.parse_args()
+
+    min_street_lenght = 100
+    min_speed = 50
     try:
         while True:
-            if((args.st_lenght > 100) or (args.speed < 50)):
+            if((args.st_lenght > min_street_lenght) or (args.speed < min_speed)):
                 street = Street(args.name, args.speed, args.st_lenght,
                                 arg_tuple_parse(args.sig_type), args.ip_address, args.port)
 
