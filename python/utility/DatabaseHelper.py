@@ -53,16 +53,24 @@ class Database:
 
         json_data_file = open(config_path, 'r')
         self.__config = json.load(json_data_file)
-        self.db=None
-        
+        self.db = None
+
     def __connect(self):
-        if (self.db is None or self.db.is_connected()==False):            
-            self.db = mysql.connect(**self.__config["mysql"])         
+        """
+        Effettua la connessione con il database
+
+        Returns:
+            cursore del database
+        """
+        if (self.db is None or self.db.is_connected() == False):
+            self.db = mysql.connect(**self.__config["mysql"])
         return self.db.cursor()
 
-
     def __close(self):
-        if (self.db is not None and self.db.is_connected()==True):
+        """
+        Chiude la connessione con il database
+        """
+        if (self.db is not None and self.db.is_connected() == True):
             self.db.close()
 
     def getStreets(self, id: int = None, ipAddress: str = None, available: bool = None) -> [DB_Street]:
@@ -77,7 +85,7 @@ class Database:
             [DB_Street]: lista delle strade recuperate
         """
 
-        cursor=self.__connect()  
+        cursor = self.__connect()
         query = ""
         values = None
         if id is not None:
@@ -120,14 +128,14 @@ class Database:
         Returns:
             DB_Street: La strada appena creata
         """
-        
+
         if id is None:
             # se esiste già una strada con lo stesso ip, la aggiorno
             streets = self.getStreets(ipAddress=ip_address)
             if streets:
                 id = streets[0].id
 
-        cursor=self.__connect() 
+        cursor = self.__connect()
         if id is not None:
             query = "UPDATE `streets` SET `name` = %s, `ip_address` = %s, `length` = %s, `available` = %s, `updated_at` = %s WHERE (`id` = %s);"
             values = (name, ip_address, length, available, datetime.now(), id)
@@ -142,7 +150,7 @@ class Database:
 
         streets = self.getStreets(id or cursor.lastrowid)
         if not streets:
-            return None        
+            return None
         return streets[0]
 
     def getRoutes(self, id: int = None, car_id: str = None, finished: bool = None, connected: bool = None) -> [DB_Route]:
@@ -159,7 +167,7 @@ class Database:
             [DB_Route]: lista dei percorsi recuperati
         """
 
-        cursor=self.__connect() 
+        cursor = self.__connect()
         query = ""
         values = None
         if id is not None:
@@ -217,7 +225,7 @@ class Database:
             DB_Route: Il percorso appena creato
         """
 
-        cursor=self.__connect() 
+        cursor = self.__connect()
         if id is not None:
             values = (car_ip,)
             query = ""

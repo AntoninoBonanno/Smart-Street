@@ -95,10 +95,10 @@ class Street:
         """
 
         street_signal = list()
-        stop = segnali.Stop()
+        stop = Segnali.Stop()
 
         # limito sin da subito a non superare il limite massimo della strada
-        street_signal.append((segnali.SpeedLimit(self.__maxSpeed, True), 20))
+        street_signal.append((Segnali.SpeedLimit(self.__maxSpeed, True), 20))
 
         # signals_quantity è una lista di tuple (nome segnale, quantità)
         for i in signals_quantity:
@@ -112,12 +112,12 @@ class Street:
 
                 if (i[0] == "speed_limit"):
                     street_signal.append(
-                        (segnali.SpeedLimit(self.__maxSpeed), position))
+                        (Segnali.SpeedLimit(self.__maxSpeed), position))
 
                 if (i[0] == "semaphore"):
                     # se il segnale è un semaforo runniamo il thread semaforo
                     street_signal.append(
-                        (segnali.Semaforo(time_semaphore), position))
+                        (Segnali.Semaforo(time_semaphore), position))
                     street_signal[-1][0].start()
 
                 print(
