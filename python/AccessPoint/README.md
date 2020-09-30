@@ -29,6 +29,9 @@ Run this command:
 
 `> python python\AccessPoint\AccessPoint.py`
 
+or you can specify:
+
+`> python python\AccessPoint\AccessPoint.py --host [ip_host] --port [port_host]`
 
 
 ## Authors
