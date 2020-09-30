@@ -3,7 +3,6 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__))) + "/utility")
 
-import atexit
 import argparse
 from random import randint
 from flask import Flask, jsonify, request, abort, make_response
@@ -113,12 +112,10 @@ def create_route():
     return jsonify(host=host, port=port, access_token=token.decode('UTF-8'), message=message), 200
 
 
-def onExit():
-    db.close()
 
 
-# quando si chiude il processo, chiudo anche la connessione con il db
-atexit.register(onExit)
+
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

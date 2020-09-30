@@ -91,7 +91,7 @@ tuple<string, string, string> Car::richiestaAccess(string destinazione) {
 */
 void Car::runStreet(string host, string port, string accessToken) {
     cout << "host: " << host <<"port:" << port <<endl;
-    cout << "accessToken:" << accessToken << endl;
+    cout << "accessToken:" << accessToken << endl << endl;
     struct addrinfo* result = NULL,
         * res = NULL,
         hints;
@@ -156,6 +156,8 @@ void Car::runStreet(string host, string port, string accessToken) {
 
     int tempo_iniziale=clock(); //tempo in millisecondi
     Json::Value response;
+    position=0;
+    current_speed = 0;
     //inizio scambio messaggi
     while(true) {
         Sleep(50);
@@ -223,12 +225,12 @@ void Car::runStreet(string host, string port, string accessToken) {
 *        start: tempo inziale 
 */
 void Car::doAction(Json::Value action,int start,double position_server) {
-    static int current_limit = speed_max; 
-    
+    static int current_limit;
+    if (position == 0) current_limit = speed_max;
     //cout << "La differenza e':  " << ((clock()-start)/1000.0) << endl;
     position = ((current_speed / 3.6) * ((clock()-start)/1000.0)) + position;
     //cout << "mia posizione: " << position<<endl;
-    //if (position_server > position) position = position_server; 
+    if (position_server > position) position = position_server; 
 
     if (action.size()!= 0) { //
         if (action["signal"].asString() == "speed_limit") current_limit = action["speed_limit"].asInt();

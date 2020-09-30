@@ -52,14 +52,18 @@ class Database:
             os.path.dirname(__file__), "../../config.json")
 
         json_data_file = open(config_path, 'r')
-        config = json.load(json_data_file)
+        self.__config = json.load(json_data_file)
+        self.db=None
+        
+    def __connect(self):
+        if (self.db is None or self.db.is_connected()==False):            
+            self.db = mysql.connect(**self.__config["mysql"])         
+        return self.db.cursor()
 
-        print("Effettuo la connessione con il DB")
-        self.db = mysql.connect(host= 'localhost',user= 'root',password= '',database= 'street_smart')
 
-    def close(self):
-        print("Chiudo la connessione con il DB")
-        self.db.close()
+    def __close(self):
+        if (self.db is not None and self.db.is_connected()==True):
+            self.db.close()
 
     def getStreets(self, id: int = None, ipAddress: str = None, available: bool = None) -> [DB_Street]:
         """
@@ -73,7 +77,7 @@ class Database:
             [DB_Street]: lista delle strade recuperate
         """
 
-        cursor = self.db.cursor()
+        cursor=self.__connect()  
         query = ""
         values = None
         if id is not None:
@@ -99,6 +103,7 @@ class Database:
         for db_data in cursor.fetchall():
             streets.append(DB_Street(db_data))
 
+        self.__close()
         return streets
 
     def upsertStreet(self, name: str, ip_address: str, length: int, available: bool = True, id: int = None) -> DB_Street:
@@ -115,14 +120,14 @@ class Database:
         Returns:
             DB_Street: La strada appena creata
         """
-
+        
         if id is None:
             # se esiste già una strada con lo stesso ip, la aggiorno
             streets = self.getStreets(ipAddress=ip_address)
             if streets:
                 id = streets[0].id
 
-        cursor = self.db.cursor()
+        cursor=self.__connect() 
         if id is not None:
             query = "UPDATE `streets` SET `name` = %s, `ip_address` = %s, `length` = %s, `available` = %s, `updated_at` = %s WHERE (`id` = %s);"
             values = (name, ip_address, length, available, datetime.now(), id)
@@ -133,9 +138,11 @@ class Database:
         cursor.execute(query, values)
         self.db.commit()
 
+        self.__close()
+
         streets = self.getStreets(id or cursor.lastrowid)
         if not streets:
-            return None
+            return None        
         return streets[0]
 
     def getRoutes(self, id: int = None, car_id: str = None, finished: bool = None, connected: bool = None) -> [DB_Route]:
@@ -152,7 +159,7 @@ class Database:
             [DB_Route]: lista dei percorsi recuperati
         """
 
-        cursor = self.db.cursor()
+        cursor=self.__connect() 
         query = ""
         values = None
         if id is not None:
@@ -186,6 +193,7 @@ class Database:
         for db_data in cursor.fetchall():
             routes.append(DB_Route(db_data))
 
+        self.__close()
         return routes
 
     def upsertRoute(self, car_id: str, car_ip: str, route_list: list = None, current_index: int = None, current_street_position: float = None, finished_at: datetime = None, connected: bool = None, id: int = None) -> DB_Route:
@@ -209,7 +217,7 @@ class Database:
             DB_Route: Il percorso appena creato
         """
 
-        cursor = self.db.cursor()
+        cursor=self.__connect() 
         if id is not None:
             values = (car_ip,)
             query = ""
@@ -243,7 +251,10 @@ class Database:
         cursor.execute(query, values)
         self.db.commit()
 
+        self.__close()
+
         routes = self.getRoutes(id or cursor.lastrowid)
         if not routes:
             return None
+
         return routes[0]

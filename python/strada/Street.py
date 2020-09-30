@@ -227,8 +227,8 @@ class Street:
         name_signal = signal.getName()
         distance = signal_position - client_position
 
-        if name_signal == "stop" and distance < 3:
-            if DB_Route.current_index >= len(DB_Route.route_list):
+        if name_signal == "stop" and distance < 1:
+            if DB_Route.current_index >= len(DB_Route.route_list)-1:
                 # il percorso è finito
                 self.__db.upsertRoute(
                     car_id, car_ip, finished_at=datetime.now(), id=DB_Route.id)
@@ -311,7 +311,7 @@ class Street:
                 "status": "error", "message": str(e)
             }).encode())
 
-        if 'car_id' in locals():
+        if 'car_id' in locals() and 'car_id' in self.__connectedClient:
             del self.__connectedClient[car_id]
             if 'DB_Route' in locals():
                 self.__db.upsertRoute(
