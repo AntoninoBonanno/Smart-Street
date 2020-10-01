@@ -26,12 +26,20 @@ type RouteDB struct {
 	connected             int     `json:"connected"`
 }
 
+type SignalDB struct {
+	streetID int     `json:"street_id"`
+	name     string  `json:"name"`
+	position float64 `json:"position"`
+	action   string  `json:"action"`
+}
+
 //Creazione di una struttura per effettuare il passaggio tra GO e QML attraverso dei segnali
 type QmlBridge struct {
 	core.QObject
 
-	_ func(street int, length int)                            `signal:"createStreet"`
-	_ func(street int, car string, position int, remove bool) `signal:"upsertCar"`
+	_ func(street int, length int)                               `signal:"createStreet"`
+	_ func(street int, car string, position int, remove bool)    `signal:"upsertCar"`
+	_ func(street int, name string, position int, action string) `signal:"createSignal"`
 }
 
 func main() {
@@ -92,6 +100,25 @@ func main() {
 
 			// Passiamo i dati al QML
 			qmlBridge.CreateStreet(streetDB.streetID, streetDB.length)
+		}
+
+		//Recupero i segnali stradali dal DB
+		result, err = db.Query("SELECT street_id, name, position, action FROM `signals`")
+		if err != nil {
+			panic(err.Error())
+		}
+
+		// Iteriamo sui risultati della query per estrarre i segnali stradali
+		for result.Next() {
+			var signal SignalDB
+
+			err = result.Scan(&signal.streetID, &signal.name, &signal.position, &signal.action)
+			if err != nil {
+				panic(err.Error())
+			}
+
+			// Passiamo i dati al QML
+			qmlBridge.CreateSignal(signal.streetID, signal.name, int(signal.position), signal.action)
 		}
 
 		//Ogni due secondi recuperiamo le informazioni sulle route

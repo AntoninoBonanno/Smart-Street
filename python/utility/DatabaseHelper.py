@@ -46,6 +46,19 @@ class DB_Route:
         self.updated_at = db_data[9]
 
 
+class DB_Signal:
+    """
+    Oggetto che rappresenta un segnale mappato nel DB
+    """
+
+    def __init__(self, db_data):
+        self.id = db_data[0]
+        self.street_id = db_data[1]
+        self.name = db_data[2]
+        self.position = db_data[3]
+        self.action = db_data[4]
+
+
 class Database:
     def __init__(self):
         config_path = os.path.join(
@@ -56,7 +69,7 @@ class Database:
         self.db = None
         self.cursor = None
 
-    def __connect(self):
+    def connect(self):
         """
         Effettua la connessione con il database
 
@@ -67,7 +80,7 @@ class Database:
             self.db = mysql.connect(**self.__config["mysql"])
             self.cursor = self.db.cursor()
 
-    def __close(self):
+    def close(self):
         """
         Chiude la connessione con il database
         """
@@ -87,7 +100,7 @@ class Database:
             [DB_Street]: lista delle strade recuperate
         """
 
-        self.__connect()
+        self.connect()
 
         query = ""
         values = None
@@ -114,7 +127,7 @@ class Database:
         for db_data in self.cursor.fetchall():
             streets.append(DB_Street(db_data))
 
-        self.__close()
+        self.close()
         return streets
 
     def upsertStreet(self, name: str, ip_address: str, length: int, available: bool = True, id: int = None) -> DB_Street:
@@ -138,7 +151,7 @@ class Database:
             if streets:
                 id = streets[0].id
 
-        self.__connect()
+        self.connect()
 
         if id is not None:
             query = "UPDATE `streets` SET `name` = %s, `ip_address` = %s, `length` = %s, `available` = %s, `updated_at` = %s WHERE (`id` = %s);"
@@ -151,7 +164,7 @@ class Database:
         self.db.commit()
 
         last_id = id or self.cursor.lastrowid
-        self.__close()
+        self.close()
 
         streets = self.getStreets(last_id)
         if not streets:
@@ -172,7 +185,7 @@ class Database:
             [DB_Route]: lista dei percorsi recuperati
         """
 
-        self.__connect()
+        self.connect()
 
         query = ""
         values = None
@@ -207,7 +220,7 @@ class Database:
         for db_data in self.cursor.fetchall():
             routes.append(DB_Route(db_data))
 
-        self.__close()
+        self.close()
         return routes
 
     def upsertRoute(self, car_id: str, car_ip: str, route_list: list = None, current_index: int = None, current_street_position: float = None, finished_at: datetime = None, connected: bool = None, id: int = None) -> DB_Route:
@@ -231,7 +244,7 @@ class Database:
             DB_Route: Il percorso appena creato
         """
 
-        self.__connect()
+        self.connect()
         if id is not None:
             values = (car_ip,)
             query = ""
@@ -266,10 +279,71 @@ class Database:
         self.db.commit()
 
         last_id = id or self.cursor.lastrowid
-        self.__close()
+        self.close()
 
         routes = self.getRoutes(last_id)
         if not routes:
             return None
 
         return routes[0]
+
+    def getSignals(self, street_id: int) -> [DB_Signal]:
+        """
+        Funzione che restituisce i segnali dal DB
+
+        Args:
+            street_id (int): Id della strada di cui si vogliono recuperare i segnali
+
+        Returns:
+            [DB_Signal]: lista dei segnali recuperati
+        """
+        self.connect()
+        self.cursor.execute(
+            "SELECT * FROM `signals` WHERE `street_id` = %s", (street_id,))
+
+        signals = []
+        for db_data in self.cursor.fetchall():
+            signals.append(DB_Signal(db_data))
+
+        self.close()
+        return signals
+
+    def upsertSignal(self, street_id: int, name: str, position: float, action: str = "", id: int = None):
+        """
+        Funzione che esegue l'upsert del segnale (inserimento o aggornamento) sul DB
+
+        Args:
+            street_id (int): Id della strada di cui si vuole salvare il segnale
+            name (str): nome/tipo del segnale
+            position (float): posizione del segnale sulla strada
+            action (str): azione che viene eseguita dal segnale
+            id (int, optional): Id del segnale da aggiornare, se non viene passato viene creato un nuovo segnale. Defaults to None.
+        """
+
+        self.connect()
+        if id is not None:
+            query = f"UPDATE `signals` SET `name` = %s, `position` = %s, `action` = %s, `updated_at` = %s WHERE (`id` = %s AND `street_id` = %s);"
+            values = (name, position, action, datetime.now(), id, street_id)
+        else:
+            query = "INSERT INTO `signals` (`street_id`, `name`, `position`, `action`) VALUES (%s, %s, %s, %s);"
+            values = (street_id, name, position, action)
+
+        self.cursor.execute(query, values)
+        self.db.commit()
+
+        last_id = id or self.cursor.lastrowid
+        self.close()
+
+    def deleteSignals(self, street_id: int):
+        """
+        Funzione che elimina i segnali dal DB
+
+        Args:
+            street_id (int): Id della strada di cui si vogliono eliminare i segnali
+        """
+
+        self.connect()
+        self.cursor.execute(
+            "DELETE FROM `signals` WHERE `street_id` = %s", (street_id,))
+        self.db.commit()
+        self.close()

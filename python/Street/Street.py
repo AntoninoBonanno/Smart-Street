@@ -17,6 +17,8 @@ import Segnali  # contiene le classi con i segnali
 # contiene funzioni per gestire il db
 from DatabaseHelper import Database, DB_Route
 
+running = True
+
 
 class Street:
 
@@ -37,9 +39,14 @@ class Street:
         """
         self.__db = Database()  # istauro la connessione con il db
 
+        self.name = name
+        self.lenght = lenght  # metri
+        self.ipAddress = f"{ipAddress}:{port}"
+        self.maxSpeed = maxSpeed  # limite massimo che si può raggiungere nella strada
+
         # aggiorno il database
         DB_Street = self.__db.upsertStreet(
-            name=name, ip_address=f"{ipAddress}:{port}", length=lenght)
+            name=self.name, ip_address=self.ipAddress, length=self.lenght)
 
         if DB_Street is None:
             raise Exception("Errore salvataggio strada sul DB")
@@ -48,15 +55,11 @@ class Street:
         self.__id = DB_Street.id
 
         # connectedClient contiene tutti i client connessi, è un dizionario con targa e posizione
-        self.__connectedClient = {}
+        self.connectedClient = {}
         self.__lock = threading.Lock()
 
-        self.__name = name
-        self.__lenght = lenght  # metri
-        self.__maxSpeed = maxSpeed  # limite massimo che si può raggiungere nella strada
-
         # creo i segnali nella strada
-        self.__signals = self.__createSignals(signals_quantity, 20, 5)
+        self.__signals = self.__createSignals(signals_quantity, 50, 5)
 
     def __createSignals(self, signals_quantity: list, step: int, time_semaphore: int) -> list:
         """
@@ -71,37 +74,48 @@ class Street:
             list: Lista dei segnali generati
         """
 
+        self.__db.deleteSignals(self.__id)
+
         street_signal = list()
         stop = Segnali.Stop()
 
         # limito sin da subito a non superare il limite massimo della strada
-        street_signal.append((Segnali.SpeedLimit(self.__maxSpeed, True), 20))
+        sl = Segnali.SpeedLimit(self.maxSpeed, True)
+        street_signal.append((sl, 20))
+        self.__db.upsertSignal(self.__id, sl.getName(), 20, sl.getSpeed())
 
         # signals_quantity è una lista di tuple (nome segnale, quantità)
         for i in signals_quantity:
             for count in range(i[1]):
                 while True:
                     # la posizione del segnale viene scelta randomicamente. Il parametro step è un offset
-                    position = randrange(50, self.__lenght, step)
+                    position = randrange(50, self.lenght, step)
                     # controlliamo che non ci siano altri segnali presenti alla posizione calcolata, inoltre ci accertiamo che il segnale non venga posizionato vicino lo stop di fine strada
-                    if(position not in (j[1] for j in street_signal) and position < (self.__lenght - stop.getDelta())):
+                    if(position not in (j[1] for j in street_signal) and position < (self.lenght - stop.getDelta())):
                         break
 
                 if (i[0] == "speed_limit"):
-                    street_signal.append(
-                        (Segnali.SpeedLimit(self.__maxSpeed), position))
+                    sl = Segnali.SpeedLimit(self.maxSpeed)
+                    street_signal.append((sl, position))
+
+                    self.__db.upsertSignal(
+                        self.__id, sl.getName(), position, sl.getSpeed())
 
                 if (i[0] == "semaphore"):
                     # se il segnale è un semaforo runniamo il thread semaforo
-                    street_signal.append(
-                        (Segnali.Semaforo(time_semaphore), position))
+                    sm = Segnali.Semaforo(time_semaphore)
+                    street_signal.append((sm, position))
                     street_signal[-1][0].start()
+
+                    self.__db.upsertSignal(self.__id, sm.getName(), position)
 
                 print(
                     "Il segnale ", street_signal[-1][0].getName(), "è nella posizione ", position)
 
         # alla lista contenente tutti i segnali presenti nella strada aggiungiamo uno stop di fine strada
-        street_signal.append((stop, self.__lenght))
+        street_signal.append((stop, self.lenght))
+        self.__db.upsertSignal(self.__id, stop.getName(),
+                               self.lenght, stop.getAction())
         return street_signal
 
     def __findSignal(self, client_position: float) -> tuple:
@@ -117,7 +131,7 @@ class Street:
 
         # signal[0] è il segnale, signal[1] è la sua posizione nella strada
         # Se il client ha superato la lunghezza della strada restituisco lo stop
-        if client_position >= self.__lenght:
+        if client_position >= self.lenght:
             stop = self.__signals[-1]
             # ogni entry di signals è una tupla
             return stop[0], stop[1]
@@ -200,7 +214,7 @@ class Street:
         current_index = DB_Route.current_index
 
         len_route_list = len(DB_Route.route_list)
-        if current_index >= 0 and current_index < len_route_list and DB_Route.route_list[current_index] == self.__id and DB_Route.current_street_position < self.__lenght:
+        if current_index >= 0 and current_index < len_route_list and DB_Route.route_list[current_index] == self.__id and DB_Route.current_street_position < self.lenght:
             #  è già autenticato quindi aggiorniamo la route
             self.__lock.acquire()
             self.__db.upsertRoute(
@@ -252,11 +266,11 @@ class Street:
                 car_id, car_ip, current_street_position=client_position, id=route.id)
             self.__lock.release()
 
-        for clients in self.__connectedClient:
+        for clients in self.connectedClient:
             if clients == car_id:
                 continue
             # connectedClient contiene tutti i client connessi, è un dizionario con targa e posizione
-            position_next = self.__connectedClient[clients]
+            position_next = self.connectedClient[clients]
             # tra un  client ed un altro deve esserci un offset di 30 metri
             if position_next > client_position and position_next - client_position <= 30:
 
@@ -330,11 +344,9 @@ class Street:
             client_address: ip e porta del client
         """
         car_ip = f"{client_address[0]}:{client_address[1]}"
-        print(
-            f'Macchine attualmente connesse: {len(self.__connectedClient) + 1 }')
 
         try:
-            while True:
+            while running:
                 # recv è bloccante, va avanti solo se riceve data
                 data = client.recv(1024).decode()
                 # data è json, quindi viene fatto il decode
@@ -355,7 +367,7 @@ class Street:
                         car_id, car_ip, speed, client_position=pos, route=route)
 
                     # memorizzo la nuova posizione per il client corrente
-                    self.__connectedClient[car_id] = position
+                    self.connectedClient[car_id] = position
                     client.send(json.dumps({
                         "status": "success",
                         "message": message,
@@ -367,7 +379,7 @@ class Street:
                         # in questo caso è la prima volta che il client entra nella strada
                         client.send(json.dumps({
                             "status": "success",
-                            "message": "Benvenuto nella strada " + self.__name
+                            "message": "Benvenuto nella strada " + self.name
                         }).encode())
 
         except socket.error:
@@ -378,9 +390,9 @@ class Street:
             }).encode())
 
         # locals() restituisce tutte le variabili locali che sono state istanziate
-        if 'car_id' in locals() and car_id in self.__connectedClient:
+        if 'car_id' in locals() and car_id in self.connectedClient:
             # con del eliminiamo il car_id che si è disconnesso
-            del self.__connectedClient[car_id]
+            del self.connectedClient[car_id]
             if 'route' in locals():  # aggiorno il db
                 self.__lock.acquire()
                 self.__db.upsertRoute(
@@ -392,6 +404,10 @@ class Street:
             client.close()  # scollego il client
         except socket.error:
             print("Client disconnesso")
+
+    def disable(self):
+        self.__db.upsertStreet(
+            name=self.name, ip_address=self.ipAddress, length=self.lenght, available=False, id=self.__id)
 
 
 def arg_tuple_parse(arg_list):
@@ -466,6 +482,7 @@ if __name__ == '__main__':
         hostname = socket.gethostname()
         ipAddress = socket.gethostbyname(hostname)
 
+    s.settimeout(0.2)
     s.bind((ipAddress, args.port))
     s.listen(5)
 
@@ -474,12 +491,25 @@ if __name__ == '__main__':
                     arg_tuple_parse(args.sig_type), ipAddress, port)
 
     print(f"La strada è in ascolto {ipAddress}:{port}")
-    while True:
-        (conn, client_address) = s.accept()
-        print(
-            f'Connesso con la macchina: {client_address[0]}:{client_address[1]}')
 
-        t = threading.Thread(target=street.manageCar,
-                             args=(conn, client_address))
-        t.daemon = True
-        t.start()
+    while running:
+        try:
+            (conn, client_address) = s.accept()
+            print(
+                f'Connesso con la macchina: {client_address[0]}:{client_address[1]}')
+            print(
+                f'Macchine attualmente connesse: {len(street.connectedClient) + 1 }')
+
+            t = threading.Thread(target=street.manageCar,
+                                 args=(conn, client_address))
+            t.daemon = True
+            t.start()
+        except socket.timeout:
+            pass
+        except KeyboardInterrupt:
+            print("Chiusura della socket")
+            running = False  # Kill the threads
+
+    street.disable()
+    s.shutdown(socket.SHUT_WR)
+    s.close()

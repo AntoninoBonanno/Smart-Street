@@ -28,3 +28,17 @@ CREATE TABLE `street_smart`.`routes` (
     FOREIGN KEY (`destination`)
     REFERENCES `street_smart`.`streets` (`id`)
 ) ENGINE=INNODB;
+
+CREATE TABLE `street_smart`.`signals` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `street_id` INT UNSIGNED NOT NULL,
+  `name` VARCHAR(45) NOT NULL,
+  `position` FLOAT UNSIGNED NOT NULL DEFAULT 0.0,
+  `action` VARCHAR(45) NULL DEFAULT NULL,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `signal_street_fk`
+    FOREIGN KEY (`street_id`)
+    REFERENCES `street_smart`.`streets` (`id`)
+)ENGINE=INNODB;

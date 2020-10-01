@@ -36,6 +36,9 @@ ApplicationWindow {
             onUpsertCar: {
                 Helper.upsertCar(street, car, position, remove);
             }
+            onCreateSignal: {
+                Helper.upsertSignal(street, name, position, action);
+            }
         }
     }
 }
