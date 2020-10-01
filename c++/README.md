@@ -1,6 +1,7 @@
 # Auto
 
-The Client was written entirely in C ++, using the following support libraries: restclient-cpp, jsoncpp and winsock2
+The Client was written entirely in C ++, using the following support libraries:
+restclient-cpp, jsoncpp and winsock2
 
 Specifications:
 
@@ -33,15 +34,22 @@ Specifications:
 
     `> ./vcpkg install jsoncpp`
 
+## For Build 
+ 
+
+If you want to make changes. (else skip this step)
+
+Go in c++\Auto and open Auto.sln with Visual Studio 2019, then build with release
 
 ## Execution
 
 Run this command:
 
-`> cd c++\Auto\Release`
+`> c++\Auto\Release\Auto.exe`
 
-`> ./Auto.exe`
+When required insert a code and speed_max for the Car, and the address of the AccessPoint.
 
+Then insert the desired destination. 
 
 ## Authors
 
