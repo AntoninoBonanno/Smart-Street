@@ -34,10 +34,9 @@ Specifications:
 
     `> ./vcpkg install jsoncpp`
 
-## For Build 
+## Building 
  
-
-If you want to make changes. (else skip this step)
+If you want to make changes or the .exe file won't start (else skip this step)
 
 Go in c++\Auto and open Auto.sln with Visual Studio 2019, then build with release
 
