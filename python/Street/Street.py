@@ -1,6 +1,3 @@
-from DatabaseHelper import Database, DB_Route
-import Segnali  # contiene le classi con i segnali
-import Auth  # contiene funzioni per gestire l'autenticazione
 import os
 import sys
 
@@ -15,8 +12,10 @@ from datetime import datetime
 sys.path.append(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__))) + "/utility")
 
-
+import Auth  # contiene funzioni per gestire l'autenticazione
+import Segnali  # contiene le classi con i segnali
 # contiene funzioni per gestire il db
+from DatabaseHelper import Database, DB_Route
 
 
 class Street:
@@ -436,7 +435,7 @@ if __name__ == '__main__':
     '''
 
     parser = argparse.ArgumentParser()
-     parser.add_argument('-ip', '--ip-address', type=str,
+    parser.add_argument('-ip', '--ip-address', type=str,
                         default=None, help="indirizzo ip strada,default None")
     parser.add_argument('-p', '--port', type=int, default=8000,
                         help="porta strada, default 8000")

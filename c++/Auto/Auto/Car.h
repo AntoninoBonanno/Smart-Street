@@ -3,7 +3,9 @@
 #include "restclient-cpp/restclient.h"
 #include "restclient-cpp/connection.h"
 #include "json/json.h"
+
 using namespace std;
+
 class Car
 {  
     private:
@@ -15,11 +17,19 @@ class Car
         tuple<string,string,string> requestAccess(string destinazione);        
         void doAction(Json::Value action, int start, double position_server);
         Json::Value jsonParse(string r);
+
     public:
         int speed_max;
-        string code;
+        string code; //targa
 
-        Car(int speed_max, string code) {  // Constructor
+        /**
+        * Costruttore della classe Car
+        * 
+        * @param speed_max: velocità massima che può raggiungere il client 
+        * @param code: targa della macchina
+        */
+
+        Car(int speed_max, string code) {  
             this->current_speed = 0;
             this->speed_max = speed_max;
             this->position = 0;
@@ -30,4 +40,3 @@ class Car
         void goToDestination(string destination);
   
 };
-

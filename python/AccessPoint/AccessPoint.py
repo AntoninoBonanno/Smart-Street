@@ -1,13 +1,15 @@
-from DatabaseHelper import Database
-import Auth
-from flask import Flask, jsonify, request, abort, make_response
-from random import randint
-import argparse
 import os
 import sys
+
+import argparse
+from random import randint
+from flask import Flask, jsonify, request, abort, make_response
+
 sys.path.append(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__))) + "/utility")
 
+import Auth
+from DatabaseHelper import Database
 
 app = Flask(__name__)
 db = Database()
