@@ -23,9 +23,13 @@ Run this command:
 
 `> python python\Street\Street.py`
 
-or you can specify:
-
-`> python python\Street\Street.py -...`
+optional arguments:
+- -H HOST, --host HOST  Indirizzo ip della strada
+-  -p PORT, --port PORT  Porta della strada, default 8000
+-  -l LENGHT, --lenght LENGHT  Lunghezza strada, default 1000, minimo 100 [metri]
+- -s SPEED, --speed SPEED Velcità massima percorribile sulla strada, default 120, minimo 50 [km/h]
+- -n NAME, --name NAME  Nome della strada
+- -st SIG_TYPE [SIG_TYPE ...], --sig-type SIG_TYPE [SIG_TYPE ...]  Nome segnali e quantità, default 'semaphore,2 speed_limit,3'
 
 
 ## Authors

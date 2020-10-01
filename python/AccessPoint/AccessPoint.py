@@ -115,8 +115,10 @@ def create_route():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--host', type=str, default=None, help="indirizzo ip ")
-    parser.add_argument('--port', type=int, default=None, help="porta")
+    parser.add_argument('-H', '--host', type=str, default=None,
+                        help="Indirizzo ip del PA")
+    parser.add_argument('-p', '--port', type=int,
+                        default=5000, help="Porta del PA, default 5000")
     args = parser.parse_args()
 
     app.run(host=args.host, port=args.port)  # avvio il server

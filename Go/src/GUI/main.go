@@ -50,25 +50,24 @@ func main() {
 	view.SetSource(core.NewQUrl3("qrc:/qml/app.qml", 0)) //carico il QML principale
 
 	go func() {
+		connection := "root:@tcp(127.0.0.1:3306)/street_smart"
+
 		//Recupero la configurazione per la connessione co il db
-		jsonFile, err := os.Open("../../../../config.json")
-		if err != nil {
-			panic(err.Error())
+		jsonFile, err := os.Open("../../../../../config.json")
+
+		if err == nil {
+			byteValue, _ := ioutil.ReadAll(jsonFile)
+
+			var res map[string]interface{}
+			json.Unmarshal(byteValue, &res)
+			mysql := res["mysql"].(map[string]interface{})
+
+			// Avvio la connessione con il DB
+			if len(mysql) != 0 {
+				connection = mysql["user"].(string) + ":" + mysql["password"].(string) + "@tcp(" + mysql["host"].(string) + ":" + mysql["port"].(string) + ")/" + mysql["database"].(string)
+			}
 		}
 		defer jsonFile.Close()
-		byteValue, _ := ioutil.ReadAll(jsonFile)
-
-		var res map[string]interface{}
-		json.Unmarshal(byteValue, &res)
-		mysql := res["mysql"].(map[string]interface{})
-
-		// Avvio la connessione con il DB
-		var connection string
-		if len(mysql) == 0 {
-			connection = "root:@tcp(127.0.0.1:3306)/street_smart"
-		} else {
-			connection = mysql["user"].(string) + ":" + mysql["password"].(string) + "@tcp(" + mysql["host"].(string) + ":" + mysql["port"].(string) + ")/" + mysql["database"].(string)
-		}
 
 		db, err := sql.Open("mysql", connection)
 		if err != nil {

@@ -430,29 +430,29 @@ if __name__ == '__main__':
     -l 100                      --> lunghezza della strada espressa in metri
     -s 90                       --> velocità massima nella strada espressa in km
     -n ss189                    --> nome della strada
-    -st stop,2 speed_limit,2    --> lista con nome segnali che devono essere presenti sulla strada e numero.
+    -st semaphore,2 speed_limit,3    --> lista con nome segnali che devono essere presenti sulla strada e numero.
 
     '''
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-ip', '--ip-address', type=str,
-                        default=None, help="indirizzo ip strada,default None")
+    parser.add_argument('-H', '--host', type=str,
+                        default=None, help="Indirizzo ip della strada")
     parser.add_argument('-p', '--port', type=int, default=8000,
-                        help="porta strada, default 8000")
-    parser.add_argument('-l', '--st-lenght', type=int,
-                        default=1000, help="lunghezza strada, default 1000")
+                        help="Porta della strada, default 8000")
+    parser.add_argument('-l', '--lenght', type=int,
+                        default=1000, help="Lunghezza strada, default 1000, minimo 100 [metri]")
     parser.add_argument('-s', '--speed', type=int, default=120,
-                        help="velcità strada, default 120")
+                        help="Velcità massima percorribile sulla strada, default 120, minimo 50 [km/h]")
     parser.add_argument('-n', '--name', type=str,
-                        default="road1", help="nome strada")
+                        default="road1", help="Nome della strada")
     parser.add_argument('-st', '--sig-type', nargs='+',
-                        type=str, help="nome segnali e quantità")
+                        type=str, help="Nome segnali e quantità, default 'semaphore,2 speed_limit,3'")
     args = parser.parse_args()
 
     min_street_lenght = 100
     min_speed = 50
 
-    if((args.st_lenght < min_street_lenght) or (args.speed < min_speed)):
+    if((args.lenght <= min_street_lenght) or (args.speed <= min_speed)):
         print("Dati inseriti non sono corretti")
         sys.exit(0)
 
@@ -460,7 +460,7 @@ if __name__ == '__main__':
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
-    ipAddress = args.ip_address
+    ipAddress = args.host
     if ipAddress is None:
         # se l'indirizzo ip è nullo l'indirizzo ip della strada diventa quello del localhost
         hostname = socket.gethostname()
@@ -470,7 +470,7 @@ if __name__ == '__main__':
     s.listen(5)
 
     ipAddress, port = s.getsockname()
-    street = Street(args.name, args.speed, args.st_lenght,
+    street = Street(args.name, args.speed, args.lenght,
                     arg_tuple_parse(args.sig_type), ipAddress, port)
 
     print(f"La strada è in ascolto {ipAddress}:{port}")

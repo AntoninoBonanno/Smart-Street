@@ -29,10 +29,10 @@ Run this command:
 
 `> python python\AccessPoint\AccessPoint.py`
 
-or you can specify:
 
-`> python python\AccessPoint\AccessPoint.py --host [ip_host] --port [port_host]`
-
+optional arguments:
+- -H HOST, --host HOST  Indirizzo ip del PA
+- -p PORT, --port PORT  Porta del PA, default 5000
 
 ## Authors
 

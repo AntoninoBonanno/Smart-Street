@@ -7,7 +7,7 @@ import "helper.js" as Helper
 ApplicationWindow {
     title: "SMART STREET"
 	visible:true
-	width: 1020
+	width: 1040
 	height: 500
 
     Rectangle {
@@ -15,7 +15,7 @@ ApplicationWindow {
         id: rootItem	
         color: "#3d3d3d"
         
-        width: 1000
+        width: 1040
         height: 1000
 
         Text {
