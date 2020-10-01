@@ -44,7 +44,7 @@ The application stores data relating to clients, routes, ip etc. in a MySQL data
 ## Operation scenario
 
 
-![alt text](https://github.com/AntoninoBonanno/Smart-Street/scenario.png?raw=true)
+![alt text](https://github.com/AntoninoBonanno/Smart-Street/blob/master/scenario.png?raw=true)
 
 
 - The client, or the car, contacts the Access Point (PA), which responds with a list of possible destinations

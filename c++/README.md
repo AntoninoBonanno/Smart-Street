@@ -46,7 +46,7 @@ Run this command:
 
 `> c++\Auto\Release\Auto.exe`
 
-When required insert a code and speed_max for the Car, and the address of the AccessPoint.
+When required insert a license plate and max speed for the Car, and the address of the Access Point.
 
 Then insert the desired destination. 
 
