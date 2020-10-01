@@ -40,7 +40,7 @@ Run this command:
 
 `> cd c++\Auto\Release`
 
-`> Auto.exe`
+`> ./Auto.exe`
 
 
 ## Authors
