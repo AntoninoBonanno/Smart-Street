@@ -1,3 +1,6 @@
+from DatabaseHelper import Database, DB_Route
+import Segnali  # contiene le classi con i segnali
+import Auth  # contiene funzioni per gestire l'autenticazione
 import os
 import sys
 
@@ -12,11 +15,8 @@ from datetime import datetime
 sys.path.append(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__))) + "/utility")
 
-import Auth  # contiene funzioni per gestire l'autenticazione
-import Segnali  # contiene le classi con i segnali
 
 # contiene funzioni per gestire il db
-from DatabaseHelper import Database, DB_Route
 
 
 class Street:
@@ -436,12 +436,18 @@ if __name__ == '__main__':
     '''
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-ip', '--ip-address', type=str, default=None)
-    parser.add_argument('-p', '--port', type=int, default=8000)
-    parser.add_argument('-l', '--st-lenght', type=int, default=1000)
-    parser.add_argument('-s', '--speed', type=int, default=120)
-    parser.add_argument('-n', '--name', type=str, default="road1")
-    parser.add_argument('-st', '--sig-type', nargs='+', type=str)
+    parser.add_argument('-ip', '--ip-address', type=str,
+                        default=None, help="indirizzo ip strada,default None")
+    parser.add_argument('-p', '--port', type=int, default=8000,
+                        help="porta strada, default 8000")
+    parser.add_argument('-l', '--st-lenght', type=int,
+                        default=1000, help="lunghezza strada, default 1000")
+    parser.add_argument('-s', '--speed', type=int, default=120,
+                        help="velcità strada, default 120")
+    parser.add_argument('-n', '--name', type=str,
+                        default="road1", help="nome strada")
+    parser.add_argument('-st', '--sig-type', nargs='+',
+                        type=str, help="nome segnali e quantità")
     args = parser.parse_args()
 
     min_street_lenght = 100
