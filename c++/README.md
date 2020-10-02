@@ -18,9 +18,11 @@ Specifications:
 
 ## Installation
 
+If you want to make changes or the .exe file won't start (else skip this step)
+
 1) Install restclient-cpp and jsoncpp
 
-    Open cmd as administrator
+    Open cmd as administrator or powershell, make sure you have installed the English language pack on Visual Studio.
 
     `> git clone https://github.com/Microsoft/vcpkg.git`
 
@@ -28,11 +30,11 @@ Specifications:
 
     `> ./bootstrap-vcpkg.sh`
 
-    `> ./vcpkg integrate instal`
+    `> ./vcpkg integrate install`
 
     `> ./vcpkg install restclient-cpp`
 
-    `> ./vcpkg install jsoncpp`
+    `> ./vcpkg install jsoncpp` or `> ./vcpkg install jsoncpp:x64-windows`
 
 ## Building 
  

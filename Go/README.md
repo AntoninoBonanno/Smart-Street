@@ -4,6 +4,9 @@ The Graphic User Interface allows you to graphically view all the components of 
 
 As for the backend, that is the part that retrieves the data from the Database, it was written in GoLang while the part relating to the graphics and its management was written with Qml and Javascript.
 
+
+![alt text](https://github.com/AntoninoBonanno/Smart-Street/blob/master/Go/screenshot.png?raw=true)
+
 ## Dependencies
 
 * [qt](https://github.com/therecipe/qt)
