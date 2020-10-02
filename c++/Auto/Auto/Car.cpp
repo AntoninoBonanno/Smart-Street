@@ -59,7 +59,7 @@ void Car::goToDestination(string destination) {
         }
         catch(string e) {
             errors++;
-            cout << endl << "\033[31m" << e << "\033[0m" << endl;
+            cout << endl << "\033[31m" << "Tentativo " << (errors + 1) << ": " << e << "\033[0m" << endl;
         }
     }
 
