@@ -2,8 +2,8 @@ import QtQuick 2.0;
 
 Image {
     source: "images/speed.png"
-    width: 30
-    height: 61
+    width: 34
+    height: 45
     x:0
-    y:-20
+    y:25
 }

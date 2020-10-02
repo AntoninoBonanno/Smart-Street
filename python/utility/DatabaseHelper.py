@@ -39,11 +39,12 @@ class DB_Route:
         self.car_ip = db_data[2]
         self.route_list = json.loads(db_data[3])
         self.current_index = db_data[4]
-        self.current_street_position = db_data[5]
-        self.destination = db_data[6]
-        self.connected = db_data[7]
-        self.finished_at = db_data[8]
-        self.updated_at = db_data[9]
+        self.current_speed = db_data[5]
+        self.current_street_position = db_data[6]
+        self.destination = db_data[7]
+        self.connected = db_data[8]
+        self.finished_at = db_data[9]
+        self.updated_at = db_data[10]
 
 
 class DB_Signal:
@@ -223,7 +224,7 @@ class Database:
         self.close()
         return routes
 
-    def upsertRoute(self, car_id: str, car_ip: str, route_list: list = None, current_index: int = None, current_street_position: float = None, finished_at: datetime = None, connected: bool = None, id: int = None) -> DB_Route:
+    def upsertRoute(self, car_id: str, car_ip: str, route_list: list = None, current_index: int = None, current_speed: int = None, current_street_position: float = None, finished_at: datetime = None, connected: bool = None, id: int = None) -> DB_Route:
         """
         Funzione che esegue l'upsert del percorso (inserimento o aggornamento) sul DB
 
@@ -232,6 +233,7 @@ class Database:
             car_ip (str): l'ip attuale della macchina
             route_list (list, optional): Lista di strade che formano il porcorso, non può essere aggiornata. Defaults to None.
             current_index (int, optional): Indice della lista dove è attualmente la macchina, obligatoria quando si fa l'aggiornamento. Defaults to None.
+            current_speed (int, optional): Velocità attuale della macchina sulla strada, Defaults to None.
             current_street_position (int, optional): Posizione attuale della macchina sulla strada dove è attualmente la macchina, obligatoria quando si fa l'aggiornamento. Defaults to None.
             finished_at (datetime, optional): Data di fine della route. Defaults to None.
             connected (bool, optional): Flag se il client è connesso oppure no. Defaults to None.
@@ -251,6 +253,10 @@ class Database:
             if current_index is not None:
                 query += "`current_index` = %s, "
                 values = (*values, current_index)
+
+            if current_speed is not None:
+                query += "`current_speed` = %s, "
+                values = (*values, current_speed)
 
             if current_street_position is not None:
                 query += "`current_street_position` = %s, "

@@ -2,7 +2,7 @@ import QtQuick 2.0;
 
 Rectangle{
     width: 1000
-    height:100
+    height:122
 
     color:"#3d3d3d"
 
@@ -13,6 +13,6 @@ Rectangle{
         anchors.fill: parent
         source: "images/street.png"
         sourceSize.width: 1000
-        sourceSize.height: 100
+        sourceSize.height: 119
     }
 }

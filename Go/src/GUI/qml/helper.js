@@ -1,6 +1,7 @@
 
 var streets = {};
 var cars = {};
+var maxY = 0;
 
 /**
  * Mostra una strada nell GUI se la strada esiste aggiorna la sua lunghezza
@@ -11,12 +12,19 @@ function upsertStreet(street_id, length) {
     if (!streets.hasOwnProperty(street_id)) {
         //Recupero il qml della strada e lo aggiungo alla GUI
         var component = Qt.createComponent("street.qml");
-        var y = (Object.keys(streets).length * 120) + 50;
+        var y = (Object.keys(streets).length * 130) + 50;
         streets[street_id] = component.createObject(rootItem, { "width": length, "y": y });
 
         //Aggiungo il nome della strada nella GUI della strada
         var component2 = Qt.createComponent("text.qml");
         component2.createObject(streets[street_id], { "text": ("Strada " + street_id) });
+
+        if (y > maxY) {
+            maxY = y;
+            textContainer.anchors.left = streets[street_id].left;
+            textContainer.anchors.right = streets[street_id].right;
+            textContainer.anchors.top = streets[street_id].bottom;
+        }
         return;
     }
     streets[street_id].width = length;
@@ -27,9 +35,10 @@ function upsertStreet(street_id, length) {
  * @param {int} street_id id della strada
  * @param {string} car_id id della macchina (targa)
  * @param {int} position posizione della macchina
+ * @param {string} message messaggio da mostrare per la macchina indicata
  * @param {bool} remove se la macchina deve essere rimossa dalla grafica
  */
-function upsertCar(street_id, car_id, position, remove) {
+function upsertCar(street_id, car_id, position, message, remove) {
     if (!streets.hasOwnProperty(street_id)) return; //se non ho strade return 
 
     if (!cars.hasOwnProperty(car_id)) { //se non ho già la macchina nella GUI la creo 
@@ -44,14 +53,22 @@ function upsertCar(street_id, car_id, position, remove) {
         //Aggingo il testo alla macchina
         var component2 = Qt.createComponent("text.qml");
         component2.createObject(cars[car_id].component, { "text": car_id });
+
+        //Aggiungo il messaggio 
+        var component3 = Qt.createComponent("text.qml");
+        cars[car_id].message = component3.createObject(textContainer, { "text": message, "color": "white" }); //, "verticalAlignment": Text.AlignBottom
         return;
     }
 
     //se la strada è diversa o voglio rimuovere la macchina, elimino la macchina dalla GUI e dalla variabile
     if (cars[car_id].street != street_id || remove) {
         cars[car_id].component.destroy();
+        cars[car_id].message.destroy();
         delete cars[car_id];
-    } else cars[car_id].component.x = position - 60; //aggiorno la posizione (- 60 perchè considero la lunghezza della macchina nella GUI)
+    } else {
+        cars[car_id].message.text = message;
+        cars[car_id].component.x = position - 60; //aggiorno la posizione (- 60 perchè considero la lunghezza della macchina nella GUI)
+    }
 }
 
 
@@ -75,13 +92,13 @@ function upsertSignal(street_id, name, position, action) {
 
     if (name == 'speed_limit') {
         var component = Qt.createComponent("speed_limit.qml");
-        var object = component.createObject(streets[street_id], { "x": position });
+        var object = component.createObject(streets[street_id], { "x": position - 10 });
 
         var component2 = Qt.createComponent("text.qml");
-        component2.createObject(object, { "text": ("Max " + action), "color": "white" });
+        component2.createObject(object, { "text": (action + " km/h"), "color": "white" });
         return;
     }
 
     var component = Qt.createComponent("semaphore.qml");
-    component.createObject(streets[street_id], { "x": position });
+    component.createObject(streets[street_id], { "x": position - 17 });
 }

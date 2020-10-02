@@ -5,5 +5,5 @@ Image {
     width: 62
     height: 37
     x:0
-    y:30
+    y:70
 }

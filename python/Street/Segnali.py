@@ -87,11 +87,11 @@ class SpeedLimit(Segnale):
 
 class Semaforo(Thread, Segnale):
 
-    def __init__(self, durata):
+    def __init__(self, durata: float):
         """Semaforo eredita attributi e metodi dalla classe Segnale, ma è anche figlia di Thread. Gestiamo il semaforo come un thread
 
         Args:
-            durata ([type]): durata in secondi del semaforo
+            durata (float): durata in secondi del semaforo
         """
         Thread.__init__(self)
         Segnale.__init__(self)

@@ -5,5 +5,5 @@ Image {
     width: 68
     height: 100
     x:0
-    y:0
+    y:20
 }

@@ -1,5 +1,6 @@
 import QtQuick 2.0
 import QtQuick.Controls 2.0
+import QtQuick.Layouts 1.3
 
 import "helper.js" as Helper
 
@@ -34,11 +35,18 @@ ApplicationWindow {
                 Helper.upsertStreet(street, length);
             }
             onUpsertCar: {
-                Helper.upsertCar(street, car, position, remove);
+                Helper.upsertCar(street, car, position, message, remove);
             }
             onCreateSignal: {
                 Helper.upsertSignal(street, name, position, action);
             }
+        }
+
+        GridLayout {
+            id: textContainer
+            anchors.left: parent.left; anchors.right: parent.right; anchors.top: parent.bottom;
+         
+            columns: 1
         }
     }
 }

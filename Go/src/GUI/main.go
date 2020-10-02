@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
+	"strconv"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -21,6 +22,7 @@ type StreetDB struct {
 type RouteDB struct {
 	carID                 string  `json:"car_id"`
 	routeList             string  `json:"route_list"`
+	currentSpeed          int     `json:"current_speed"`
 	currentIndex          int     `json:"current_index"`
 	currentStreetPosition float64 `json:"current_street_position"`
 	connected             int     `json:"connected"`
@@ -37,9 +39,9 @@ type SignalDB struct {
 type QmlBridge struct {
 	core.QObject
 
-	_ func(street int, length int)                               `signal:"createStreet"`
-	_ func(street int, car string, position int, remove bool)    `signal:"upsertCar"`
-	_ func(street int, name string, position int, action string) `signal:"createSignal"`
+	_ func(street int, length int)                                            `signal:"createStreet"`
+	_ func(street int, car string, position int, message string, remove bool) `signal:"upsertCar"`
+	_ func(street int, name string, position int, action string)              `signal:"createSignal"`
 }
 
 func main() {
@@ -126,7 +128,7 @@ func main() {
 			_ = t //t non viene usata
 
 			//Recupero le route dal DB
-			result, err := db.Query("SELECT car_id, route_list, current_index, current_street_position, connected FROM `routes` WHERE finished_at IS NULL OR DATE(finished_at) = CURDATE()")
+			result, err := db.Query("SELECT car_id, route_list, current_index, current_speed, current_street_position, connected FROM `routes` WHERE finished_at IS NULL OR DATE(finished_at) = CURDATE()")
 			if err != nil {
 				panic(err.Error())
 			}
@@ -134,7 +136,7 @@ func main() {
 			for result.Next() {
 				var routeDB RouteDB
 
-				err = result.Scan(&routeDB.carID, &routeDB.routeList, &routeDB.currentIndex, &routeDB.currentStreetPosition, &routeDB.connected)
+				err = result.Scan(&routeDB.carID, &routeDB.routeList, &routeDB.currentIndex, &routeDB.currentSpeed, &routeDB.currentStreetPosition, &routeDB.connected)
 				if err != nil {
 					panic(err.Error())
 				}
@@ -145,8 +147,9 @@ func main() {
 					json.Unmarshal([]byte(routeDB.routeList), &routeListConverted)
 					idStreet := routeListConverted[routeDB.currentIndex]
 
+					message := "L'auto " + routeDB.carID + " è nella strada " + strconv.Itoa(idStreet) + ", posizione " + strconv.Itoa(int(routeDB.currentStreetPosition)) + " m, velocità " + strconv.Itoa(routeDB.currentSpeed) + " km/h, deve percorrere altre " + strconv.Itoa(len(routeListConverted)-routeDB.currentIndex-1) + " strade."
 					// Passiamo i dati al QML per l'aggiornamento della posizione delle macchine
-					qmlBridge.UpsertCar(idStreet, routeDB.carID, int(routeDB.currentStreetPosition), routeDB.connected == 0)
+					qmlBridge.UpsertCar(idStreet, routeDB.carID, int(routeDB.currentStreetPosition), message, routeDB.connected == 0)
 				}
 			}
 		}

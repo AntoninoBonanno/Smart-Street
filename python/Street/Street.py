@@ -59,16 +59,16 @@ class Street:
         self.__lock = threading.Lock()
 
         # creo i segnali nella strada
-        self.__signals = self.__createSignals(signals_quantity, 50, 5)
+        self.__signals = self.__createSignals(signals_quantity, 50, 20)
 
-    def __createSignals(self, signals_quantity: list, step: int, time_semaphore: int) -> list:
+    def __createSignals(self, signals_quantity: list, step: int, time_semaphore: float) -> list:
         """
         Questa funzione permette di creare i segnali nella strada
 
         Args:
             signals_quantity (list): lista di tuple contente nome del segnale e quantità
-            step (int): offeset per calcolo posizioni segnali
-            time_semaphore (int): durata semaforo
+            step (int): offeset per calcolo posizioni segnali [metri]
+            time_semaphore (float): durata semaforo [secondi]
 
         Returns:
             list: Lista dei segnali generati
@@ -218,7 +218,7 @@ class Street:
             #  è già autenticato quindi aggiorniamo la route
             self.__lock.acquire()
             self.__db.upsertRoute(
-                car_id, car_ip, connected=True, id=DB_Route.id)
+                car_id, car_ip, connected=True, current_speed=0, id=DB_Route.id)
             self.__lock.release()
             return DB_Route
 
@@ -230,7 +230,7 @@ class Street:
         # ho autenticato l'utente e aggiorno la route
         self.__lock.acquire()
         self.__db.upsertRoute(car_id, car_ip, current_index=(
-            current_index + 1), current_street_position=0, connected=True, id=DB_Route.id)
+            current_index + 1), current_street_position=0, current_speed=0, connected=True, id=DB_Route.id)
         self.__lock.release()
 
         return DB_Route
@@ -263,7 +263,7 @@ class Street:
             # se il client ci passa una posizione maggiore di quella presente nel db allora dobbiamo aggiornarla nel db
             self.__lock.acquire()
             self.__db.upsertRoute(
-                car_id, car_ip, current_street_position=client_position, id=route.id)
+                car_id, car_ip, current_street_position=client_position, current_speed=client_speed, id=route.id)
             self.__lock.release()
 
         for clients in self.connectedClient:
@@ -275,10 +275,12 @@ class Street:
             if position_next > client_position and position_next - client_position <= 30:
 
                 # comunico l'azione di fermarsi perchè c'è un auto di fronte
+                distance = (position_next - client_position)
                 action = {
                     "signal": "auto",
                     "action": "fermati",
-                    "distance": position_next - client_position,
+                    # l'auto si deve fermare 5 metri prima (altrimenti incidente)
+                    "distance": distance - 5 if distance > 5 else 0,
                     "speed_limit": None
                 }
                 return action, client_position, f"Fra {action['distance']:.2f}m c'e' una macchina, l'azione che devi eseguire e' {action['action']}."
@@ -297,7 +299,7 @@ class Street:
                 # se non ci sono più strade successive, il percorso è finito
                 self.__lock.acquire()
                 self.__db.upsertRoute(
-                    car_id, car_ip, finished_at=datetime.now(), id=route.id)
+                    car_id, car_ip, current_speed=0, finished_at=datetime.now(), id=route.id)
                 self.__lock.release()
                 return {"action": "end"}, client_position, f"Congratulazioni sei arrivato a destinazione"
 
@@ -396,7 +398,7 @@ class Street:
             if 'route' in locals():  # aggiorno il db
                 self.__lock.acquire()
                 self.__db.upsertRoute(
-                    car_id, car_ip, connected=False, id=route.id)
+                    car_id, car_ip, current_speed=0, connected=False, id=route.id)
                 self.__lock.release()
 
         try:
@@ -482,7 +484,7 @@ if __name__ == '__main__':
         hostname = socket.gethostname()
         ipAddress = socket.gethostbyname(hostname)
 
-    s.settimeout(0.2)
+    s.settimeout(0.5)
     s.bind((ipAddress, args.port))
     s.listen(5)
 
@@ -494,6 +496,7 @@ if __name__ == '__main__':
 
     while running:
         try:
+            time.sleep(1)
             (conn, client_address) = s.accept()
             print(
                 f'Connesso con la macchina: {client_address[0]}:{client_address[1]}')
@@ -511,5 +514,4 @@ if __name__ == '__main__':
             running = False  # Kill the threads
 
     street.disable()
-    s.shutdown(socket.SHUT_WR)
     s.close()
