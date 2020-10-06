@@ -33,6 +33,8 @@ int main(int argc, char* argv[])
     } while (destinazione == 0 || destinazione >streets.size());
 
     macchina.goToDestination(to_string(destinazione)); //Seleziono la destinazione e inizio il mio percorso
+
+    system("PAUSE");
 }
 
 

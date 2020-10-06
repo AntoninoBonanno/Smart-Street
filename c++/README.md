@@ -32,7 +32,7 @@ If you want to make changes or the .exe file won't start (else skip this step)
 
     `> ./vcpkg integrate install`
 
-    `> ./vcpkg install restclient-cpp`
+    `> ./vcpkg install restclient-cpp` or  `> ./vcpkg install restclient-cpp:x64-windows`
 
     `> ./vcpkg install jsoncpp` or `> ./vcpkg install jsoncpp:x64-windows`
 

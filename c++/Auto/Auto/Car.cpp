@@ -59,7 +59,12 @@ void Car::goToDestination(string destination) {
         }
         catch(string e) {
             errors++;
-            cout << endl << "\033[31m" << "Tentativo " << (errors + 1) << ": " << e << "\033[0m" << endl;
+            cout << endl << "\033[31m" << "Tentativo " << errors << ": " << e << "\033[0m" << endl << endl;
+
+            /*HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+            SetConsoleTextAttribute(hConsole, 12);
+            cout << endl << "Tentativo " << errors << ": " << e << endl << endl;
+            SetConsoleTextAttribute(hConsole, 15);   */    
         }
     }
 
@@ -134,7 +139,7 @@ void Car::runStreet(string host, string port, string accessToken) {
     if (iResult != 0) {
         cout <<"Impossibile contattare la strada: "<< iResult << endl;
         WSACleanup();
-        throw "Impossibile contattare la strada";
+        throw string("Impossibile contattare la strada");
     }
 
     SOCKET ConnectSocket = INVALID_SOCKET;
@@ -152,7 +157,7 @@ void Car::runStreet(string host, string port, string accessToken) {
         cout << "Impossibile contattare la strada!" << endl;
         freeaddrinfo(result);
         WSACleanup();
-        throw "Impossibile contattare la strada";
+        throw string("Impossibile contattare la strada");
     }
     else cout << "Ho stabilito la connessione con la strada: " << host << ":" << port << endl;
 
@@ -164,7 +169,7 @@ void Car::runStreet(string host, string port, string accessToken) {
         cout << "Richiesta di accesso fallita: "<< WSAGetLastError()<< endl;;
         closesocket(ConnectSocket);
         WSACleanup();
-        throw "Richiesta di accesso fallita";
+        throw string("Richiesta di accesso fallita");
     }
 
     vector<char> rcvbuffer(4096);
@@ -196,7 +201,7 @@ void Car::runStreet(string host, string port, string accessToken) {
                 cout<<"Errore da parte della strada: " << response["message"] << endl;
                 closesocket(ConnectSocket);
                 WSACleanup();
-                throw "Errore da parte della strada";
+                throw string("Errore da parte della strada");
             }
 
             cout << fixed << setprecision(2) <<"Posizione: " << this->position << " m - Velocita': " << this->current_speed <<" km/h - Targa: " << this->code << endl;
@@ -212,7 +217,7 @@ void Car::runStreet(string host, string port, string accessToken) {
             cout << "Invio dati fallito: "<< WSAGetLastError()<< endl;;
             closesocket(ConnectSocket);
             WSACleanup();
-            throw "Invio dati fallito";
+            throw string("Invio dati fallito");
         }
 
     }
@@ -228,7 +233,7 @@ void Car::runStreet(string host, string port, string accessToken) {
     }else cout << "Ho chiuso la connessione con la strada: " << host<<": "<< port << endl;
 
     // Se esiste una strada successiva (ricevo next) richiamo la funzione, per percorrere la nuova strada. 
-    if (response.size() == 0) throw "Non ho ricevuto nulla dalla strada";
+    if (response.size() == 0) throw string("Non ho ricevuto nulla dalla strada");
     if (response["action"]["action"].asString() == "next" && response["action"]["host"].asString() != "" && response["action"]["port"].asString() != "")
         runStreet(response["action"]["host"].asString(), response["action"]["port"].asString(), response["action"]["access_token"].asString()); 
 }
